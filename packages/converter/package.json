@@ -3,6 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "description": "Converts Mermaid stateDiagram-v2 files with %% @directives into typed @fozy-labs/rx-toolkit statechart definitions",
+  "author": "Vladimir Panev <vova6255@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/fozy-labs/statechart/tree/main/packages/converter#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fozy-labs/statechart.git",
+    "directory": "packages/converter"
+  },
+  "bugs": {
+    "url": "https://github.com/fozy-labs/statechart/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "engines": {
     "node": ">=20"
