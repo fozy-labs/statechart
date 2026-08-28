@@ -4,7 +4,7 @@
 `*.generated.ts` с `createMachine` из `@fozy-labs/rx-toolkit`. Парсер собственный, построчный;
 mermaid (11.17.2) нужен только тестам как дифференциальный оракул. Файл остаётся валидным mermaid
 и рендерится без плагинов. Обратное направление — `definition.toMermaid()` библиотеки
-([toMermaid](../../docs/statechart/README.md#экспорт-в-mermaid-tomermaid)): его текст конвертер
+([toMermaid](https://github.com/fozy-labs/rx-toolkit/blob/v0.12.0-rc.1/docs/statechart/README.md#экспорт-в-mermaid-tomermaid)): его текст конвертер
 разбирает в тот же конфиг.
 
 ## Содержание
@@ -21,8 +21,9 @@ mermaid (11.17.2) нужен только тестам как дифференц
 ## Использование
 
 ```bash
-npm run convert -- path/to/square.mmd            # → path/to/square.generated.ts
+npm run convert -- path/to/square.mmd            # → path/to/square.generated.ts (из packages/converter: build + cli)
 npm run convert -- path/to/square.mmd --out x.ts  # -o x.ts
+npx statechart-convert path/to/square.mmd         # в проекте, где пакет установлен
 ```
 
 ```ts
@@ -52,7 +53,7 @@ flowchart LR
     CHK --> RES["ParseResult"]
     RES --> GATE["validateMachineConfig<br/>createMachine библиотеки"]
     GATE --> EMIT["emit → *.generated.ts"]
-    RES -. "source-режим" .-> VIZ["apps/viz"]
+    RES -. "source-режим" .-> VIZ["packages/viz"]
 ```
 
 ## Подмножество mermaid
@@ -169,7 +170,7 @@ mermaid 11.17.2 (дерево `getRootDocV2()`, размещение по `getDa
 unit-тесты слоёв, негативные на каждую отвергаемую конструкцию, снапшоты примеров
 `test/fixtures/*.mmd`, round-trip `parse(definition.toMermaid())` = конфиг для набора конфигов
 библиотеки (`test/roundTripFixtures.ts`; тела директив тест подставляет сам — `toMermaid` их не
-восстанавливает), `tsc --strict` над сгенерированными файлами против исходников библиотеки
-(`src/` корня репозитория, а не сборки `dist/`; в vitest `@fozy-labs/rx-toolkit` тоже указывает на
-них). Перед записью `convert` прогоняет конфиг через `createMachine` библиотеки — невалидная машина
+восстанавливает), `tsc --strict` над сгенерированными файлами против установленного пакета
+`@fozy-labs/rx-toolkit` (его `dist/*.d.ts` из `node_modules` — то, что видит потребитель; декларации
+библиотеки при этом проверяются явно, без `skipLibCheck`). Перед записью `convert` прогоняет конфиг через `createMachine` библиотеки — невалидная машина
 падает при конвертации, не в рантайме.

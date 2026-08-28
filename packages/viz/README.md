@@ -2,8 +2,9 @@
 
 React-компонент `StatechartViz` — интерактивная визуализация statechart'а rx-toolkit поверх диаграммы
 mermaid (`stateDiagram-v2`): подсветка активных состояний по `value` запущенной машины, отправка событий кликом
-по переходу или кнопкой, лог событий и текущий `context`. Собирается Vite как библиотека (`dist/`), приватный
-пакет монорепо.
+по переходу или кнопкой, лог событий и текущий `context`. Собирается Vite как библиотека (`dist/`); пакет
+`packages/viz` репозитория [fozy-labs/statechart](../../README.md). Требует `@fozy-labs/rx-toolkit` `>=0.12.0-rc.1`
+(peer-зависимость: `mutate`, `definition.source`).
 
 ## Содержание
 
@@ -130,15 +131,16 @@ flowchart LR
 ## Разработка
 
 ```bash
-npm install            # в корне репозитория: npm install && npm run build (dist/ нужен playground'у)
-                       # в apps/converter: npm install && npm run build (dist/ нужен режиму source)
+npm install            # в корне репозитория; затем npm run build -w packages/converter: конвертер подключён
+                       # workspace-ссылкой и читается из его dist/ (типы, unit-тесты, dev-сервер, сборка)
 npm run dev            # playground: /?fixture=trafficLight|square|parallel[&mode=source[&source=<текст>]], спайк: /spike/
-npm run ts-check       # включая исходники конвертера (tsconfig paths)
-npm run test           # vitest (jsdom): core, playground (реальный конвейер), testing, type-тест VizMachine
+npm run ts-check       # против dist/ конвертера и установленного @fozy-labs/rx-toolkit
+npm run test           # vitest (jsdom): core, playground (реальный конвейер), testing, type-тест VizMachine,
+                       # файловые снапшоты src/__tests__/proposal/*.generated.ts — вывод конвертера (обновить: vitest -u)
 npm run test:e2e       # Playwright (chromium) поверх playground'а
 npm run lint / format:check
 npm run build          # dist/index.js + dist/index.d.ts; конвертер и typescript — external
-npm run check:all
+npm run check:all      # из корня репозитория npm run check:all собирает конвертер и проверяет оба пакета
 ```
 
 Playground в режиме `source` гоняет реальный конвейер по тексту фикстуры (`src/testing/fixtures/*` — примеры

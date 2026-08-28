@@ -11,7 +11,7 @@ export default tseslint.config(
     // Base JS rules
     js.configs.recommended,
 
-    // TypeScript recommended rules (mirrors apps/demos)
+    // TypeScript recommended rules
     ...tseslint.configs.recommended,
     {
         languageOptions: {

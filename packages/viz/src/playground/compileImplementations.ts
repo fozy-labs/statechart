@@ -2,7 +2,7 @@
  * Playground compilation of directive bodies ("Contract: ParseResult",
  * playground compilation rules).
  *
- * This module is the ONLY place in apps/viz that evaluates text as code
+ * This module is the ONLY place in packages/viz that evaluates text as code
  * (`new Function`). It backs the `source` mode of `StatechartViz`: a host
  * page using that mode needs CSP `unsafe-eval`, and a foreign `.mmd` file is
  * foreign code. The `machine` mode never reaches this module.
