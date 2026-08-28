@@ -1,0 +1,2 @@
+# Converter output stored as vitest file snapshots (src/__tests__/proposal/generated.test.ts): not prettier-formatted by design.
+src/__tests__/proposal/*.generated.ts

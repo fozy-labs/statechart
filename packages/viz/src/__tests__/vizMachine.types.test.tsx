@@ -3,7 +3,8 @@
  * `square` and `trafficLight` definitions is assignable to `VizMachine`
  * without casts, and `<StatechartViz machine={...} />` typechecks. Verified
  * by `npm run ts-check`; vitest only asserts that the module loads. The
- * generated files of the library's test tree are referenced through
+ * generated files of `./proposal/` (the converter's output for the fixtures,
+ * kept fresh by `proposal/generated.test.ts`) are referenced through
  * `typeof import(...)`, which is erased at runtime.
  */
 import { MachineSignal, Signal } from "@fozy-labs/rx-toolkit";
@@ -12,11 +13,11 @@ import { describe, expect, it } from "vitest";
 import { StatechartViz } from "../StatechartViz";
 import type { MachineConfigLike, VizMachine } from "../types";
 
-declare const squareDefinition: typeof import("@/statechart/__tests__/proposal/square.generated").definition;
-declare const trafficLightDefinition: typeof import("@/statechart/__tests__/proposal/trafficLight.generated").definition;
+declare const squareDefinition: typeof import("./proposal/square.generated").definition;
+declare const trafficLightDefinition: typeof import("./proposal/trafficLight.generated").definition;
 
-type SquareContext = import("@/statechart/__tests__/proposal/square.generated").Context;
-type SquareEvents = import("@/statechart/__tests__/proposal/square.generated").Events;
+type SquareContext = import("./proposal/square.generated").Context;
+type SquareEvents = import("./proposal/square.generated").Events;
 
 /** Never called: every statement is a compile-time assertion. */
 function assignments() {
