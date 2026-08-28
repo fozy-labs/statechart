@@ -1,18 +1,8 @@
-import { fileURLToPath } from "node:url";
-
 import { defineConfig } from "vitest/config";
 
-/** Root `src/` of the repository: the library at HEAD, not the root `dist/` build (no dependency on the build order). */
-const LIBRARY_SRC = fileURLToPath(new URL("../../src/", import.meta.url));
-
+// `@fozy-labs/rx-toolkit` is the installed package (see package.json): no
+// alias — the tests exercise the same build a consumer gets.
 export default defineConfig({
-    resolve: {
-        alias: [
-            { find: /^@fozy-labs\/rx-toolkit$/, replacement: `${LIBRARY_SRC}index.ts` },
-            // The root sources import each other through the `@/*` path alias.
-            { find: /^@\//, replacement: LIBRARY_SRC },
-        ],
-    },
     test: {
         environment: "node",
         include: ["src/**/*.test.ts", "test/**/*.test.ts"],

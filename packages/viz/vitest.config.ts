@@ -1,16 +1,14 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
+// See vite.config.ts: the library is an installed package and the converter
+// is the workspace link to its built `dist/` — nothing to dedupe or inline.
 export default defineConfig({
     plugins: [react()],
-    // See vite.config.ts: the library and the converter are symlinks; the
-    // converter's `typescript` import is pinned to this package's copy.
-    resolve: { dedupe: ["react", "react-dom", "rxjs", "typescript"] },
     test: {
         environment: "jsdom",
         include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
         setupFiles: ["src/__tests__/setup.ts"],
-        server: { deps: { inline: [/@fozy-labs[\/]rx-toolkit/] } },
         pool: "forks",
     },
 });

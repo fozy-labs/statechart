@@ -1,29 +1,35 @@
 /**
  * `tsc --strict` (plus `noUnusedLocals` / `noUnusedParameters`) over a
- * generated file held in memory, with `@fozy-labs/rx-toolkit` mapped onto the
- * library sources at HEAD (root `src/index.ts`, `@/*` → `src/*`) under the
- * root's own compiler options (`@fozy-labs/js-configs/typescript`, which
- * `<repo>/tsconfig.json` extends): `moduleResolution: bundler`, `lib` DOM +
- * ESNext, `jsx: react-jsx`.
+ * generated file held in memory, with `@fozy-labs/rx-toolkit` resolved the
+ * way a consumer's project resolves it: from `node_modules`, i.e. the
+ * installed package's `dist/*.d.ts`, under the compiler options of a typical
+ * host (`moduleResolution: bundler`, `lib` DOM + ESNext, `jsx: react-jsx`).
+ * The generated file is placed (virtually) inside this package, so the
+ * lookup walks up from `test/__virtual__/` and finds the workspace's copy.
  *
- * Every call builds one `ts.Program`, but the library files are parsed once
- * (shared source-file cache) and the previous program is handed over as
+ * Every call builds one `ts.Program`, but the declaration files are parsed
+ * once (shared source-file cache) and the previous program is handed over as
  * `oldProgram`, so a test file with many generated files stays fast.
  * `typecheckGenerated` reports the diagnostics of the generated file only;
- * `typecheckLibrary` proves once per run that the library itself is clean
- * under the root's options, which is what makes that restriction honest.
+ * `typecheckLibrary` proves once per run that the library's own declarations
+ * are clean under the same options — checked explicitly, `skipLibCheck`
+ * would silence them — which is what makes that restriction honest: an
+ * unresolved import inside the library would otherwise degrade its types to
+ * `any` and let the negative cases pass for the wrong reason.
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import ts from "typescript";
 
-const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
+const LIBRARY_PACKAGE = "@fozy-labs/rx-toolkit";
+/** Root of this package: diagnostics outside the generated file are reported relative to it. */
+const PACKAGE_ROOT = fileURLToPath(new URL("../", import.meta.url));
 /** The generated file's path: fixed, so that `oldProgram` can reuse the program structure between calls. */
 const VIRTUAL_PATH = normalize(fileURLToPath(new URL("./__virtual__/generated.ts", import.meta.url)));
 
 const OPTIONS: ts.CompilerOptions = {
-    // Root tsconfig (base + paths)
+    // A typical host project
     target: ts.ScriptTarget.ESNext,
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
@@ -35,17 +41,25 @@ const OPTIONS: ts.CompilerOptions = {
     forceConsistentCasingInFileNames: true,
     resolveJsonModule: true,
     isolatedModules: true,
-    baseUrl: REPO_ROOT,
-    paths: { "@fozy-labs/rx-toolkit": ["src/index.ts"], "@/*": ["src/*"] },
-    typeRoots: [path.join(REPO_ROOT, "node_modules", "@types")],
+    // No automatic `@types/*` globals: the generated file needs none, and the
+    // library's declarations pull the types they import through module resolution.
+    types: [],
     // What the generated file must pass on top
     noUnusedLocals: true,
     noUnusedParameters: true,
     noEmit: true,
 };
 
-/** The root's own strictness: `noUnusedLocals` / `noUnusedParameters` are not part of it. */
-const LIBRARY_OPTIONS: ts.CompilerOptions = { ...OPTIONS, noUnusedLocals: false, noUnusedParameters: false };
+/**
+ * The library's declarations are checked for real (`skipLibCheck: false`);
+ * `noUnusedLocals` / `noUnusedParameters` are the generated file's rule, not theirs.
+ */
+const LIBRARY_OPTIONS: ts.CompilerOptions = {
+    ...OPTIONS,
+    skipLibCheck: false,
+    noUnusedLocals: false,
+    noUnusedParameters: false,
+};
 
 function normalize(fileName: string): string {
     return path.resolve(fileName).replace(/\\/g, "/");
@@ -53,6 +67,11 @@ function normalize(fileName: string): string {
 
 function isVirtual(fileName: string): boolean {
     return normalize(fileName).toLowerCase() === VIRTUAL_PATH.toLowerCase();
+}
+
+/** A file of the installed library package (`node_modules/@fozy-labs/rx-toolkit/…`). */
+function isLibraryFile(fileName: string): boolean {
+    return normalize(fileName).includes(`/node_modules/${LIBRARY_PACKAGE}/`);
 }
 
 /** Library and `.d.ts` files parsed once per process. */
@@ -88,7 +107,7 @@ function format(diagnostic: ts.Diagnostic, name: string): string {
     const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
     const fileName = isVirtual(diagnostic.file.fileName)
         ? name
-        : path.relative(REPO_ROOT, diagnostic.file.fileName).replace(/\\/g, "/");
+        : path.relative(PACKAGE_ROOT, diagnostic.file.fileName).replace(/\\/g, "/");
     return `${fileName}(${line + 1},${character + 1}): TS${diagnostic.code}: ${message}`;
 }
 
@@ -105,11 +124,23 @@ export function typecheckGenerated(code: string, name = "generated.ts"): string[
     ].map((diagnostic) => format(diagnostic, name));
 }
 
-/** Diagnostics of every file but the generated one — the library sources under the root's options; expected empty. */
+/**
+ * Diagnostics of the installed library's declaration files (every
+ * `node_modules/@fozy-labs/rx-toolkit/**` file the generated file pulls in)
+ * plus any option / global diagnostic; expected empty. The generated file
+ * itself and the library's own dependencies (`rxjs`, `react`, …) are not
+ * reported.
+ */
 export function typecheckLibrary(code: string): string[] {
     const program = createProgram(code, LIBRARY_OPTIONS);
-    return ts
-        .getPreEmitDiagnostics(program)
-        .filter((diagnostic) => diagnostic.file === undefined || !isVirtual(diagnostic.file.fileName))
-        .map((diagnostic) => format(diagnostic, "generated.ts"));
+    const libraryFiles = program.getSourceFiles().filter((sourceFile) => isLibraryFile(sourceFile.fileName));
+    if (libraryFiles.length === 0) throw new Error(`${LIBRARY_PACKAGE} did not make it into the program`);
+    return [
+        ...program.getOptionsDiagnostics(),
+        ...program.getGlobalDiagnostics(),
+        ...libraryFiles.flatMap((sourceFile) => [
+            ...program.getSyntacticDiagnostics(sourceFile),
+            ...program.getSemanticDiagnostics(sourceFile),
+        ]),
+    ].map((diagnostic) => format(diagnostic, "generated.ts"));
 }

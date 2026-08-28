@@ -1,9 +1,9 @@
 /**
- * `tsc --strict` over generated files against the real library (root `src/`
- * at HEAD, see `typecheckGenerated.ts`): the proposal's examples, a kitchen
- * sink, the no-context / no-events case, two negative cases proving the
- * harness is not vacuous, and the round-trip fixtures converted from their
- * `withDirectives(toMermaid())` text.
+ * `tsc --strict` over generated files against the real library (the
+ * installed `@fozy-labs/rx-toolkit` package, see `typecheckGenerated.ts`):
+ * the proposal's examples, a kitchen sink, the no-context / no-events case,
+ * two negative cases proving the harness is not vacuous, and the round-trip
+ * fixtures converted from their `withDirectives(toMermaid())` text.
  */
 import { readFileSync } from "node:fs";
 
@@ -51,7 +51,7 @@ const KITCHEN_SINK = `stateDiagram-v2
 `;
 
 describe("generated files typecheck against the library", () => {
-    it("the library sources are clean under the harness options (so reporting the generated file only is honest)", () => {
+    it("the library's declarations are clean under the harness options (so reporting the generated file only is honest)", () => {
         const { code } = convert(fixture("square.mmd"), { fileName: "square.mmd" });
         expect(typecheckLibrary(code)).toEqual([]);
     });
