@@ -1,80 +1,97 @@
-# Релиз
+# Releasing
 
-Пакеты версионируются синхронно: одна версия на `@fozy-labs/statechart-converter` и `@fozy-labs/statechart-viz`,
-один git-тег `vX.Y.Z`, одна секция в [CHANGELOG.md](./CHANGELOG.md). Публикация — вручную, по шагам ниже.
+`@fozy-labs/statechart-converter` and `@fozy-labs/statechart-viz` are released together: one version for both, one
+`vX.Y.Z` git tag, one [CHANGELOG](CHANGELOG.md) section. Publishing is manual, by the steps below.
 
-## Предпосылки
+## Prerequisites
 
-- npm-аккаунт с правом публикации в scope `@fozy-labs` (`pnpm whoami`); при 2FA код передаётся как `--otp <код>`.
-- `gh auth status` — для тега и GitHub Release.
-- Node ≥ 20.19, pnpm (версия из поля `packageManager`), Chromium для Playwright
-  (`pnpm --filter ./packages/viz exec playwright install chromium`).
+- An npm account allowed to publish into the `@fozy-labs` scope — check with `pnpm whoami`. With 2FA on, pass the
+  one-time code as `--otp <code>`.
+- GitHub CLI authenticated: `gh auth status`. Needed for the tag and the release.
+- Node `>=20.19.0`, and pnpm at the version pinned by the root `packageManager` field.
+- A Playwright browser: `pnpm --filter ./packages/viz exec playwright install chromium`.
 
-## Шаги
+## Steps
 
-1. Чистое дерево, зелёные проверки:
+#### 1. Start from a clean tree and green checks
 
-   ```bash
-   git status --porcelain      # пусто
-   pnpm install --frozen-lockfile && pnpm run check:all
-   ```
+```sh
+git status --porcelain   # must print nothing
+pnpm install --frozen-lockfile && pnpm run check:all
+```
 
-2. Версия `X.Y.Z` в обоих пакетах, без git-тега:
+#### 2. Set the version in both packages
 
-   ```bash
-   pnpm version X.Y.Z --filter "@fozy-labs/statechart-*" --no-git-tag-version
-   ```
+```sh
+pnpm version X.Y.Z --filter "@fozy-labs/statechart-*" --no-git-tag-version
+```
 
-   Диапазон converter в viz править не нужно: он записан как `workspace:^` и подменяется на `^X.Y.Z` при публикации.
-   `pnpm-lock.yaml` версии workspace-пакетов не хранит (там `link:../converter`), поэтому переустановка не требуется.
+Nothing else to touch. viz depends on the converter through `workspace:^`, which `pnpm publish` rewrites to `^X.Y.Z`
+in the published manifest, and `pnpm-lock.yaml` records the workspace link rather than a version, so it needs no
+refresh.
 
-3. `CHANGELOG.md`: содержимое `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`, ссылки внизу
-   (`[Unreleased]: …/compare/vX.Y.Z...HEAD`, `[X.Y.Z]: …/releases/tag/vX.Y.Z`).
+#### 3. Close the CHANGELOG section
 
-4. Коммит и тег:
+Move everything under `[Unreleased]` into a new `## [X.Y.Z] - YYYY-MM-DD` heading, and update the reference links at
+the bottom of the file: `[Unreleased]` now compares `vX.Y.Z...HEAD`, and `[X.Y.Z]` points at the new tag.
 
-   ```bash
-   git commit -am "chore(release): vX.Y.Z"
-   git tag -a vX.Y.Z -m "vX.Y.Z"
-   git push --follow-tags
-   ```
+#### 4. Commit and tag
 
-5. Публикация — порядок важен, viz зависит от converter. `prepublishOnly` каждого пакета пересобирает его `dist`;
-   viz при сборке читает типы converter из его `dist`, поэтому сначала общий `pnpm run build`.
+```sh
+git commit -am "chore(release): vX.Y.Z"
+git tag -a vX.Y.Z -m "vX.Y.Z"
+git push --follow-tags
+```
 
-   ```bash
-   pnpm run build
-   pnpm --filter ./packages/converter publish --dry-run   # состав тарбола: dist, README, LICENSE, package.json
-   pnpm --filter ./packages/converter publish
-   pnpm --filter ./packages/viz publish --dry-run
-   pnpm --filter ./packages/viz publish
-   ```
+#### 5. Publish, converter first
 
-   `pnpm publish` подменяет `workspace:^` на `^X.Y.Z` в публикуемом `package.json` — проверьте это в выводе
-   `--dry-run`. Перед публикацией pnpm требует чистое дерево и ветку `main`, синхронизированную с remote; из другой
-   ветки — `--no-git-checks`.
+The order matters: viz depends on the converter, and building viz reads the converter's types out of its `dist/`.
+Each package's `prepublishOnly` rebuilds its own `dist`, but the shared build has to run first.
 
-   Предрелиз (`X.Y.Z-rc.N`) публикуется с `--tag rc`, чтобы не сдвигать `latest`.
+```sh
+pnpm run build
+pnpm --filter ./packages/converter publish --dry-run   # inspect the tarball: dist, README, LICENSE, package.json
+pnpm --filter ./packages/converter publish
+pnpm --filter ./packages/viz publish --dry-run
+pnpm --filter ./packages/viz publish
+```
 
-6. GitHub Release из тега, заметки — секция CHANGELOG (или опубликовать заранее созданный draft):
+Check in the `--dry-run` output that `workspace:^` came out as `^X.Y.Z`. Publish a prerelease (`X.Y.Z-rc.N`) with
+`--tag rc`, so it does not move `latest`.
 
-   ```bash
-   gh release create vX.Y.Z --title vX.Y.Z --notes-file <файл с секцией CHANGELOG>
-   ```
+> [!NOTE]
+> `pnpm publish` refuses to run unless the tree is clean and the current branch is `main`, in sync with its remote.
+> Releasing from any other branch needs `--no-git-checks`.
 
-7. Проверка:
+#### 6. Create the GitHub release
 
-   ```bash
-   pnpm view @fozy-labs/statechart-converter version
-   pnpm view @fozy-labs/statechart-viz version
-   ```
+Notes are the CHANGELOG section for this version — either from a file, or by publishing a draft prepared earlier.
 
-   и установка в пустой проект: `npm install @fozy-labs/statechart-viz @fozy-labs/rx-toolkit@rc mermaid react react-dom rxjs`.
+```sh
+gh release create vX.Y.Z --title vX.Y.Z --notes-file <file holding the CHANGELOG section>
+```
 
-## Откат до публикации
+#### 7. Verify
 
-Тег ещё ничем не использован — его можно снять и поставить заново:
+```sh
+pnpm view @fozy-labs/statechart-converter version
+pnpm view @fozy-labs/statechart-viz version
+```
 
-```bash
+Then install into an empty project and check that it resolves:
+
+```sh
+npm install @fozy-labs/statechart-viz @fozy-labs/rx-toolkit@rc mermaid react react-dom rxjs
+```
+
+## Rolling back
+
+Before publishing, the tag is not yet load-bearing and can be removed and recreated:
+
+```sh
 git tag -d vX.Y.Z && git push --delete origin vX.Y.Z
 ```
+
+> [!WARNING]
+> Once published, a version is permanent — unpublishing is limited to 72 hours and to npm's policy. Fix a bad release
+> by publishing the next version, not by removing the broken one.
