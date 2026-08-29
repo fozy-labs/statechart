@@ -21,7 +21,19 @@
   рамки панелей; `unstyled` отключает встроенный стиль (`BASE_CSS` экспортируется).
 - **viz** — фикстура `door` (гвард, отклоняющий в начальном контексте) в playground и e2e.
 
+- **viz** — зум-контролы диаграммы вынесены в HTML-оверлей `StatechartViz.DiagramControls`
+  (+ хук `useDiagramControls`); `Diagram` принимает `children` как оверлей. Layout-переменные
+  `--scv-min-height` / `--scv-diagram-min-height` снимают минимальные высоты в стеснённых хостах.
+
+### Fixed
+- **viz** — диаграмма и контролы не реагировали на resize контейнера: встроенные иконки svg-pan-zoom
+  рисуются в SVG с координатами на момент инициализации и уезжали за панель, viewport оставался от старого
+  размера. Теперь `ResizeObserver` перевписывает диаграмму (пока пользователь не зумил сам; «вписать»
+  возвращает слежение), контролы — HTML в углу панели.
+
 ### Changed
+- **viz** — монолитный `<StatechartViz />` принимает те же пропсы, что и `Root`
+  (`className` / `style` / `unstyled` / `children`).
 - **viz** — лог: отказ рендерится как `⊘ ~~EVENT~~ [guard] from`; `LogEntry` получил `reason?`.
   `HighlightState.enabledEdges` заменён на `edgeStatuses` (`applyHighlight` из публичного API).
 

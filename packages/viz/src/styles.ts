@@ -64,7 +64,7 @@ ${tokenDeclarations}
     display: flex;
     flex-direction: column;
     gap: 8px;
-    min-height: 480px;
+    min-height: var(--scv-min-height, 480px);
     height: 100%;
     box-sizing: border-box;
 }
@@ -74,10 +74,13 @@ ${tokenDeclarations}
 .scv-status { color: var(--scv-muted); }
 .scv-value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .scv-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 8px; flex: 1; min-height: 0; }
-.scv-diagram { position: relative; border: 1px solid var(--scv-border); border-radius: 6px; background: var(--scv-bg); min-height: 420px; overflow: hidden; }
+.scv-diagram { position: relative; border: 1px solid var(--scv-border); border-radius: 6px; background: var(--scv-bg); min-height: var(--scv-diagram-min-height, 420px); overflow: hidden; }
 .scv-diagram > svg { display: block; width: 100%; height: 100%; }
 .scv-message { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; color: var(--scv-muted); }
 .scv-message.scv-error { color: var(--scv-error); white-space: pre-wrap; }
+.scv-zoom { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
+.scv-zoom-button { width: 26px; height: 26px; display: grid; place-items: center; padding: 0; font: 14px/1 system-ui, sans-serif; border: 1px solid var(--scv-border-strong); border-radius: 4px; background: var(--scv-bg); color: var(--scv-muted); cursor: pointer; }
+.scv-zoom-button:hover { color: var(--scv-text); }
 .scv-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: auto; }
 .scv-panel { border: 1px solid var(--scv-border); border-radius: 6px; padding: 8px 10px; background: var(--scv-panel); }
 .scv-panel-title { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--scv-muted); }

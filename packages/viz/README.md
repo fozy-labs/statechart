@@ -31,7 +31,7 @@ type StatechartVizProps =
           onMachine?: (machine: DisposableVizMachine | null) => void;
       };
 
-// StatechartViz.Root принимает дополнительно:
+// StatechartViz и StatechartViz.Root принимают дополнительно:
 type StatechartVizRootProps = StatechartVizProps & {
     className?: string;
     style?: CSSProperties;
@@ -88,7 +88,8 @@ interface VizMachine<TContext = unknown, TEvent extends { type: string } = { typ
 | `Root`          | провайдер + рамка `.scv`; без `children` — layout по умолчанию   |
 | `Header`        | заголовок, статус машины, текущий `value`                        |
 | `Body` / `Side` | layout-слоты: грид «диаграмма + колонка» и скроллящаяся колонка  |
-| `Diagram`       | интерактивная диаграмма (pan/zoom, клики)                        |
+| `Diagram`       | интерактивная диаграмма (pan/zoom, клики); `children` — оверлей поверх неё (по умолчанию — `DiagramControls`; `null` — без него) |
+| `DiagramControls` | кнопки зума (+ / − / вписать) — HTML-оверлей в углу панели     |
 | `Notice`        | ошибка режима `source`; без ошибки не рендерится                 |
 | `Events`        | события выбранного состояния + `PayloadEditor`                   |
 | `PayloadEditor` | редактор payload отдельно (внутри `Events` уже есть)             |
@@ -98,7 +99,8 @@ interface VizMachine<TContext = unknown, TEvent extends { type: string } = { typ
 Каждая часть принимает `className`. Части — тонкие обёртки над headless-хуком `useStatechartViz()`
 (тип `StatechartVizApi`, работает под `Root`): снапшот, `activeIds`, `edgeStatuses`, выбор состояния,
 `outgoing`, `canSend`/`send` (с логированием), лог, состояние payload-редактора. Любую боковую панель
-можно заменить своей, не теряя остального.
+можно заменить своей, не теряя остального. Для своих кнопок зума внутри `Diagram` есть
+`useDiagramControls()` (`zoomIn` / `zoomOut` / `reset`).
 
 ## Темизация
 
@@ -119,7 +121,11 @@ interface VizMachine<TContext = unknown, TEvent extends { type: string } = { typ
 | `--scv-blocked`       | `#b45309`    | переходы, отклонённые гвардом, и подписи гвардов   |
 | `--scv-error`         | `#b00020`    | текст ошибок                                       |
 
-Таблица экспортируется как `THEME_TOKENS`. `unstyled` на `Root` отключает встроенный стиль целиком —
+Помимо цветов — две layout-переменные (не входят в `THEME_TOKENS`): `--scv-min-height` (по умолчанию
+`480px`, минимум всего компонента) и `--scv-diagram-min-height` (`420px`, минимум панели диаграммы);
+хост со стеснённой высотой ставит их в `0`, чтобы компонент никогда не вылезал за свой контейнер.
+
+Таблица цветов экспортируется как `THEME_TOKENS`. `unstyled` на `Root` отключает встроенный стиль целиком —
 хост стилизует классы `scv-*` и атрибуты `data-scv-*` сам (`BASE_CSS` экспортируется как отправная
 точка); правила интерактивности диаграммы (курсоры, обводки подсветки) инжектятся всегда — они
 привязаны к id конкретного SVG и читают те же токены с fallback-значениями. Внутренность SVG
@@ -204,6 +210,10 @@ Markdown вместо `.mmd`: если в тексте есть ```` ```mermaid 
   [docs/svg-scheme.md](docs/svg-scheme.md); на каждый snapshot переключаются классы `scv-active`,
   `scv-selected`, `scv-enabled`, `scv-blocked` без перерендера (`scv-denied` — одноразовое мигание по клику
   на заблокированное ребро).
+- Панель диаграммы следит за своим размером (`ResizeObserver`): пока пользователь не зумил и не панорамировал,
+  диаграмма перевписывается в панель при каждом resize; после ручного зума viewport сохраняется, кнопка
+  «вписать» возвращает слежение. Кнопки зума — HTML-оверлей (`DiagramControls`), а не встроенные иконки
+  svg-pan-zoom, которые рисуются в SVG один раз и за панелью не следят.
 - `mermaid.initialize` компонент не вызывает — конфигурация mermaid остаётся за хостом; `securityLevel: "sandbox"`
   не поддерживается (SVG уезжает в iframe).
 - Внутреннее состояние — на сигналах rx-toolkit (`Signal.state`), подписка через `useSignal`.

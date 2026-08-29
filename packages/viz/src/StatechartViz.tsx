@@ -1,5 +1,4 @@
-import type { StatechartVizProps } from "./types";
-import { VizDiagram } from "./viz/DiagramPanel";
+import { VizDiagram, VizDiagramControls } from "./viz/DiagramPanel";
 import {
     VizBody,
     VizContextPanel,
@@ -53,7 +52,7 @@ function Root(props: StatechartVizRootProps) {
  * ```
  */
 export const StatechartViz = Object.assign(
-    function StatechartViz(props: StatechartVizProps) {
+    function StatechartViz(props: StatechartVizRootProps) {
         return <Root {...props} />;
     },
     {
@@ -63,8 +62,10 @@ export const StatechartViz = Object.assign(
         Header: VizHeader,
         /** Layout slot: the diagram + side column grid. */
         Body: VizBody,
-        /** The interactive diagram (pan/zoom, clicks). */
+        /** The interactive diagram (pan/zoom, clicks); children overlay it (zoom controls by default). */
         Diagram: VizDiagram,
+        /** The zoom controls alone, for a custom `Diagram` overlay. */
+        DiagramControls: VizDiagramControls,
         /** Layout slot: the scrolling side column. */
         Side: VizSide,
         /** Source-mode pipeline / runtime error; renders nothing when there is none. */
