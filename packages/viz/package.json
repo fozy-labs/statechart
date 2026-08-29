@@ -1,7 +1,6 @@
 {
   "name": "@fozy-labs/statechart-viz",
   "version": "0.1.0",
-  "private": true,
   "description": "Interactive mermaid-based visualizer for rx-toolkit statecharts",
   "author": "Vladimir Panev <vova6255@gmail.com>",
   "license": "MIT",
@@ -36,6 +35,7 @@
   "scripts": {
     "dev": "vite",
     "build": "rimraf dist && vite build && tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
     "ts-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

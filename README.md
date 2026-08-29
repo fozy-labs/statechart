@@ -42,8 +42,8 @@ flowchart LR
 
 ## Установка и использование
 
-В `package.json` обоих пакетов стоит `private: true` — в npm они не опубликованы. Ниже — работа из репозитория и вид
-после публикации.
+Оба пакета публикуются в npm под scope `@fozy-labs` синхронно, одной версией (история — [CHANGELOG.md](./CHANGELOG.md),
+процедура — [RELEASING.md](./RELEASING.md)). Ниже — работа из репозитория и как зависимость проекта.
 
 ### Конвертер
 
@@ -52,7 +52,7 @@ flowchart LR
 node packages/converter/dist/cli.js path/to/square.mmd            # → path/to/square.generated.ts
 node packages/converter/dist/cli.js path/to/square.mmd --out x.ts
 
-# как зависимость проекта (после публикации)
+# как зависимость проекта
 npm install --save-dev @fozy-labs/statechart-converter
 npx statechart-convert path/to/square.mmd
 ```
