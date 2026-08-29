@@ -1,6 +1,6 @@
 {
   "name": "@fozy-labs/statechart-viz",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Interactive mermaid-based visualizer for rx-toolkit statecharts",
   "author": "Vladimir Panev <vova6255@gmail.com>",
   "license": "MIT",

@@ -8,6 +8,8 @@ The format follows [Keep a Changelog 2.0.0](https://keepachangelog.com/en/2.0.0/
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-29
+
 ### Added
 
 - **viz** — Compound components and a headless API. `StatechartViz.Root` composes with `Header`, `Body`, `Diagram`,
@@ -25,11 +27,20 @@ The format follows [Keep a Changelog 2.0.0](https://keepachangelog.com/en/2.0.0/
   `Diagram` accepts `children` as an overlay. `--scv-min-height` and `--scv-diagram-min-height` release the minimum
   heights for cramped hosts.
 - **viz** — A `door` fixture — a guard that refuses in the initial context — in the playground and the e2e suite.
+- **viz** — The UI store behind the panels is injectable and subscribable. `StatechartViz.createStore()` builds the
+  store that holds the selection, the event log and the payload editor's state; `Root` accepts it as a `store` prop
+  (and still creates its own per machine when none is given), `StatechartViz.useStore()` lets a panel follow a single
+  signal without re-rendering with the whole `useStatechartViz()` object, `VizStore.reset()` puts every signal back
+  in one batch, and `api.store` exposes the instance to code already holding the API.
 
 ### Changed
 
 - **viz** — `<StatechartViz />` accepts the same props as `Root`: `className`, `style`, `unstyled` and `children`.
 - **viz** — A refused event is logged as `⊘ ~~EVENT~~ [guard] from`, and `LogEntry` carries the `reason`.
+- **viz** — The diagram is repainted so one node reads as active: inert states take the field's own
+  `--scv-bg` / `--scv-border-strong` colours, leaving the active state as the only filled node. `--scv-active` moves
+  from red to violet — red now marks errors only — so each predicate (active, selected, enabled, blocked, error) has
+  exactly one colour. Side panels flatten onto the field colour, and spacing sits on a single ~1.7 progression.
 
 ### Fixed
 
@@ -68,6 +79,7 @@ First release, extracted from [fozy-labs/rx-toolkit](https://github.com/fozy-lab
   states highlighted, events sent by clicking a transition, an event log and the `context`. `source` compiles `.mmd`
   text in the browser, loading the converter and TypeScript on demand.
 
-[Unreleased]: https://github.com/fozy-labs/statechart/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/fozy-labs/statechart/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/fozy-labs/statechart/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fozy-labs/statechart/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/fozy-labs/statechart/releases/tag/v0.1.0
