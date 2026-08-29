@@ -1,5 +1,6 @@
 export { StatechartViz, type StatechartVizRootProps } from "./StatechartViz";
 export { useStatechartViz, type PayloadApi, type StatechartVizApi } from "./viz/context";
+export { useDiagramControls, type DiagramControlsApi } from "./viz/DiagramPanel";
 export { type LogEntry } from "./viz/log";
 export {
     buildRowsPayload,

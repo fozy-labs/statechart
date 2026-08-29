@@ -172,6 +172,49 @@ test.describe("state selection and event panel", () => {
     });
 });
 
+test.describe("diagram viewport and zoom controls", () => {
+    const viewportTransform = (page: Page) =>
+        page.locator("[data-scv-diagram] svg .svg-pan-zoom_viewport").getAttribute("transform");
+
+    test("controls are an HTML overlay that stays inside the panel after resize", async ({ page }) => {
+        await open(page, "trafficLight");
+        // The stock in-SVG icons are off; the overlay replaces them.
+        await expect(page.locator("#svg-pan-zoom-controls")).toHaveCount(0);
+        const zoom = page.locator("[data-scv-zoom]");
+        await expect(zoom).toBeVisible();
+
+        await page.setViewportSize({ width: 760, height: 560 });
+        const panel = await page.locator("[data-scv-diagram]").boundingBox();
+        const box = await zoom.boundingBox();
+        expect(panel).not.toBeNull();
+        expect(box).not.toBeNull();
+        if (panel && box) {
+            expect(box.x).toBeGreaterThanOrEqual(panel.x);
+            expect(box.x + box.width).toBeLessThanOrEqual(panel.x + panel.width);
+            expect(box.y).toBeGreaterThanOrEqual(panel.y);
+            expect(box.y + box.height).toBeLessThanOrEqual(panel.y + panel.height);
+        }
+    });
+
+    test("the diagram refits on resize until a manual zoom; Fit resumes following", async ({ page }) => {
+        await open(page, "trafficLight");
+        const before = await viewportTransform(page);
+        await page.setViewportSize({ width: 900, height: 640 });
+        await expect.poll(() => viewportTransform(page)).not.toBe(before);
+
+        await page.locator("[data-scv-zoom-in]").click();
+        const zoomed = await viewportTransform(page);
+        expect(zoomed).not.toBeNull();
+        await page.setViewportSize({ width: 1100, height: 700 });
+        // A manual zoom suspends the refit: the viewport survives the resize.
+        await page.waitForTimeout(250);
+        expect(await viewportTransform(page)).toBe(zoomed);
+
+        await page.locator("[data-scv-zoom-reset]").click();
+        await expect.poll(() => viewportTransform(page)).not.toBe(zoomed);
+    });
+});
+
 test.describe("guard-blocked transitions", () => {
     test("a blocked edge is marked, a click logs the refusal with the guard", async ({ page }) => {
         await open(page, "door");

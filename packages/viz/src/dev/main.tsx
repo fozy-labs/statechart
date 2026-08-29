@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, type CSSProperties } from "react";
 import { createRoot } from "react-dom/client";
 
 import { StatechartViz } from "../index";
@@ -41,9 +41,22 @@ window.__scvPlayground = playground;
 
 const navStyle = { display: "flex", gap: 12, font: "13px system-ui, sans-serif" } as const;
 
+// The playground always fits the window: the default min-heights are lifted
+// through the layout variables (see the README's theming section).
+const vizStyle = { "--scv-min-height": "0", "--scv-diagram-min-height": "0" } as CSSProperties;
+
 function Playground() {
     return (
-        <div style={{ height: "100vh", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div
+            style={{
+                height: "100vh",
+                padding: 12,
+                boxSizing: "border-box",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+            }}
+        >
             <nav style={navStyle}>
                 {Object.keys(fixtures).map((name) => (
                     <a key={name} href={`?fixture=${name}`} style={{ fontWeight: name === fixture.name ? 600 : 400 }}>
@@ -56,9 +69,10 @@ function Playground() {
             </nav>
             <div style={{ flex: 1, minHeight: 0 }}>
                 {fakeMachine ? (
-                    <StatechartViz machine={fakeMachine} />
+                    <StatechartViz machine={fakeMachine} style={vizStyle} />
                 ) : (
                     <StatechartViz
+                        style={vizStyle}
                         source={source}
                         machineId={machineId}
                         title={`${fixture.name} (source)`}
