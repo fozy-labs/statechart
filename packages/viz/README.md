@@ -158,6 +158,7 @@ type StatechartVizRootProps = StatechartVizProps & {
     className?: string;
     style?: CSSProperties;
     unstyled?: boolean;
+    store?: VizStore;
     children?: ReactNode;
 };
 ```
@@ -204,6 +205,13 @@ Type: `boolean`\
 Default: `false`
 
 Skips the built-in stylesheet. See [Theming](#theming).
+
+#### `store`
+
+Type: `VizStore`Default: a fresh store per machine
+
+The state `Root` drives — the selection, the log and the payload. Pass one to own that state yourself. See
+[The store](#the-store).
 
 #### `children`
 
@@ -262,6 +270,47 @@ Returns `StatechartVizApi`. Throws when called outside a `Root`.
 | `log` | `LogEntry[]` | newest first, capped at 200 |
 | `clearLog` | `() => void` | no built-in part calls this — it exists for host UI |
 | `payload` | `PayloadApi` | the editor's state, its parse result, and the mutators behind both modes |
+| `store` | `VizStore` | the signals behind `selectedId`, `log` and `payload.state` — see [The store](#the-store) |
+
+### The store
+
+The selection, the event log and the payload editor's state live in a store — three rx-toolkit signals and a
+`reset`. `Root` creates one per machine; `StatechartViz.createStore()` makes one the host owns instead, passed back
+in as [`store`](#store).
+
+```ts
+type VizStore = {
+    readonly selected$: StateSignal<string | null>;
+    readonly log$: StateSignal<LogEntry[]>;
+    readonly payload$: StateSignal<PayloadState>;
+    reset(): void;
+};
+```
+
+| Signal | Holds |
+| --- | --- |
+| `selected$` | the Mermaid id of the selected state, `null` when nothing is selected |
+| `log$` | the attempts, newest first, capped at 200 |
+| `payload$` | the editor's mode and both of its texts |
+
+A store passed in belongs to whoever created it: `Root` reads and writes it but never replaces or resets it — not
+even on a machine change, where its own store would have started over. `reset()` does that by hand, in one batch.
+The store holds no subscription of its own, so there is nothing to dispose.
+
+`StatechartViz.useStore()` returns that instance from inside the tree, and throws outside a `Root`. Its identity is
+stable across the Root's renders — unlike the `useStatechartViz()` object, which is rebuilt on every one — so a panel
+subscribed to one signal wakes for that signal alone, not for every keystroke in the payload editor.
+
+```tsx
+function MyLog() {
+    const log = useSignal(StatechartViz.useStore().log$);
+    return <ol>{log.map((entry) => <li key={entry.seq}>{entry.event.type}</li>)}</ol>;
+}
+```
+
+Writing works from outside React just as well: `store.selected$.set("locked")` reaches the view exactly as `select`
+does from inside it. Both the factory and the hook are exported under their own names too — `createVizStore`,
+`useVizStore` and the `VizStore` type.
 
 ### `useDiagramControls()`
 

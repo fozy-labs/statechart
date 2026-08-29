@@ -1,5 +1,5 @@
 export { StatechartViz, type StatechartVizRootProps } from "./StatechartViz";
-export { useStatechartViz, type PayloadApi, type StatechartVizApi } from "./viz/context";
+export { useStatechartViz, useVizStore, type PayloadApi, type StatechartVizApi } from "./viz/context";
 export { useDiagramControls, type DiagramControlsApi } from "./viz/DiagramPanel";
 export { type LogEntry } from "./viz/log";
 export {
@@ -11,6 +11,7 @@ export {
     type PayloadRow,
     type PayloadState,
 } from "./viz/payload";
+export { createVizStore, type VizStore } from "./viz/store";
 export { type DiagramState } from "./viz/useDiagram";
 export { computeEdgeStatuses, type EdgeInteractivity, type EdgeStatusMap } from "./core/edgeStatus";
 export { BASE_CSS, diagramCss, THEME_TOKENS } from "./styles";

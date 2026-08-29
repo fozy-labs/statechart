@@ -1,3 +1,4 @@
+import { useVizStore } from "./viz/context";
 import { VizDiagram, VizDiagramControls } from "./viz/DiagramPanel";
 import {
     VizBody,
@@ -9,6 +10,7 @@ import {
     VizPayloadEditor,
     VizSide,
 } from "./viz/parts";
+import { createVizStore } from "./viz/store";
 import { VizRoot, type StatechartVizRootProps } from "./viz/VizRoot";
 
 /** The layout `<StatechartViz />` has always rendered; `Root` falls back to it without children. */
@@ -50,6 +52,12 @@ function Root(props: StatechartVizRootProps) {
  *     <MyInspector /> // built on useStatechartViz()
  * </StatechartViz.Root>
  * ```
+ *
+ * The selection, the log and the payload live in a store. `Root` creates one
+ * per machine; `StatechartViz.createStore()` makes one the host owns instead
+ * — pass it as `store` to read or write that state from outside React. Either
+ * way `StatechartViz.useStore()` reaches it from inside, for a component that
+ * follows a single signal rather than the whole API.
  */
 export const StatechartViz = Object.assign(
     function StatechartViz(props: StatechartVizRootProps) {
@@ -58,6 +66,13 @@ export const StatechartViz = Object.assign(
     {
         /** Provider and frame; renders the default layout when given no children. */
         Root,
+        /**
+         * Creates the store `Root` drives (selection, log, payload) — pass it
+         * to `Root` to own that state, or let `Root` create its own.
+         */
+        createStore: createVizStore,
+        /** The store `Root` drives, to subscribe to one of its signals alone. */
+        useStore: useVizStore,
         /** Title, machine status, current state value. */
         Header: VizHeader,
         /** Layout slot: the diagram + side column grid. */

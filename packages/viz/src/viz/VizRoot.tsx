@@ -1,4 +1,4 @@
-import { Signal, useConstant, useSignal, type StateSignal } from "@fozy-labs/rx-toolkit";
+import { Signal, useConstant, useSignal } from "@fozy-labs/rx-toolkit";
 import { useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode } from "react";
 
 import { collectGuardsForEvent, collectOutgoingEvents } from "../core/configWalk";
@@ -13,19 +13,11 @@ import {
 import { BASE_CSS } from "../styles";
 import type { StatechartVizProps, VizMachine, VizSnapshot } from "../types";
 
-import { VizContext, type StatechartVizApi } from "./context";
+import { VizContext, VizStoreContext, type StatechartVizApi } from "./context";
 import { cx } from "./cx";
-import { appendLog, timeStamp, type LogEntry } from "./log";
-import {
-    initialPayloadState,
-    payloadResult,
-    withAddedRow,
-    withJson,
-    withMode,
-    withRemovedRow,
-    withRow,
-    type PayloadState,
-} from "./payload";
+import { appendLog, timeStamp } from "./log";
+import { payloadResult, withAddedRow, withJson, withMode, withRemovedRow, withRow } from "./payload";
+import { createVizStore, type VizStore } from "./store";
 import { useDiagram } from "./useDiagram";
 
 export type StatechartVizRootProps = StatechartVizProps & {
@@ -38,6 +30,14 @@ export type StatechartVizRootProps = StatechartVizProps & {
      * the rendered SVG and read `--scv-*` custom properties the host can set.
      */
     unstyled?: boolean;
+    /**
+     * The store to drive, from `StatechartViz.createStore()`. Pass one to
+     * read or write the selection, the log and the payload from outside
+     * React; `Root` then treats it as the host's — it is never replaced, not
+     * even when the machine changes, where `Root`'s own store would have
+     * started over (`store.reset()` does that by hand).
+     */
+    store?: VizStore;
     /** Custom layout built from `StatechartViz.*` parts; the default layout otherwise. */
     children?: ReactNode;
 };
@@ -52,6 +52,7 @@ export function VizRoot({
     className,
     style,
     unstyled,
+    store,
     children,
     defaultChildren,
     ...props
@@ -59,11 +60,14 @@ export function VizRoot({
     defaultChildren: ReactNode;
 }) {
     const resolved = useResolvedMachine(props as StatechartVizProps);
-    const api = useVizApi(resolved);
+    const vizStore = useVizStoreInstance(resolved.machine, store);
+    const api = useVizApi(resolved, vizStore);
     return (
         <div className={cx("scv", className)} style={style} data-scv-root="">
             {!unstyled && <style>{BASE_CSS}</style>}
-            <VizContext.Provider value={api}>{children ?? defaultChildren}</VizContext.Provider>
+            <VizStoreContext.Provider value={vizStore}>
+                <VizContext.Provider value={api}>{children ?? defaultChildren}</VizContext.Provider>
+            </VizStoreContext.Provider>
         </div>
     );
 }
@@ -181,21 +185,17 @@ function useResolvedMachine(props: StatechartVizProps): ResolvedMachine {
 }
 
 // ---------------------------------------------------------------------------
-// The API object
+// The store and the API object
 // ---------------------------------------------------------------------------
 
-type VizStore = {
-    selected$: StateSignal<string | null>;
-    log$: StateSignal<LogEntry[]>;
-    payload$: StateSignal<PayloadState>;
-};
-
-function createVizStore(): VizStore {
-    return {
-        selected$: Signal.state<string | null>(null),
-        log$: Signal.state<LogEntry[]>([]),
-        payload$: Signal.state<PayloadState>(initialPayloadState()),
-    };
+/**
+ * The host's store when it gave one, a fresh one per machine otherwise: a
+ * `Root`-owned store starts over with the machine it belongs to, since a
+ * selection and a log of another machine mean nothing for this one.
+ */
+function useVizStoreInstance(machine: VizMachine | null, external: VizStore | undefined): VizStore {
+    const own = useConstant(createVizStore, [machine]);
+    return external ?? own;
 }
 
 function useMachineSnapshot(machine: VizMachine | null): VizSnapshot | null {
@@ -208,9 +208,8 @@ function useMachineSnapshot(machine: VizMachine | null): VizSnapshot | null {
 
 const NEVER_SNAPSHOT = Signal.state<VizSnapshot | null>(null);
 
-function useVizApi(resolved: ResolvedMachine): StatechartVizApi {
+function useVizApi(resolved: ResolvedMachine, store: VizStore): StatechartVizApi {
     const { machine, diagramSource, notice, title } = resolved;
-    const store = useConstant(createVizStore, [machine]);
     const snapshot = useMachineSnapshot(machine);
     const selectedId = useSignal(store.selected$);
     const log = useSignal(store.log$);
@@ -245,6 +244,7 @@ function useVizApi(resolved: ResolvedMachine): StatechartVizApi {
 
     return {
         machine,
+        store,
         snapshot,
         title,
         notice,
