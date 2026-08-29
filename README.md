@@ -48,7 +48,7 @@ flowchart LR
 ### Конвертер
 
 ```bash
-# из репозитория (после npm install && npm run build -w packages/converter)
+# из репозитория (после pnpm install && pnpm --filter ./packages/converter run build)
 node packages/converter/dist/cli.js path/to/square.mmd            # → path/to/square.generated.ts
 node packages/converter/dist/cli.js path/to/square.mmd --out x.ts
 
@@ -83,28 +83,32 @@ const square$ = MachineSignal.state(square);
 
 ## Разработка
 
-Требования: Node `>=20.19.0` (`engines`), для e2e — браузер Playwright (`npx playwright install chromium`).
+Требования: pnpm (версия закреплена полем `packageManager`, corepack поднимет её сам), Node `>=20.19.0` (`engines`),
+для e2e — браузер Playwright (`pnpm --filter ./packages/viz exec playwright install chromium`).
 
 ```bash
-npm install                  # один lockfile в корне; @fozy-labs/rx-toolkit — из npm, конвертер связан с viz workspace-ссылкой
-npm run build                # converter → viz (порядок важен, см. ниже)
-npm run check:all            # build, затем check:all каждого пакета: tsc, vitest, eslint, prettier; у viz ещё Playwright e2e
-npm run test                 # vitest обоих пакетов (перед этим собирает конвертер)
-npm run ts-check / lint / format:check
-npm run test:e2e             # Playwright viz
-npm run dev -w packages/viz  # playground viz на http://localhost:3100
+pnpm install                 # один pnpm-lock.yaml в корне; @fozy-labs/rx-toolkit — из npm, конвертер связан с viz как workspace:^
+pnpm run build               # converter → viz (порядок важен, см. ниже)
+pnpm run check:all           # build, затем check:all каждого пакета: tsc, vitest, eslint, prettier; у viz ещё Playwright e2e
+pnpm run test                # vitest обоих пакетов (перед этим собирает конвертер)
+pnpm run ts-check / lint / format:check
+pnpm run test:e2e            # Playwright viz
+pnpm --filter ./packages/viz run dev   # playground viz на http://localhost:3100
 ```
 
-Порядок сборки. viz видит конвертер как обычный установленный пакет: `node_modules/@fozy-labs/statechart-converter` —
-workspace-ссылка на `packages/converter`, которая по `exports` ведёт в его `dist/`. Типы (`tsc`), unit-тесты (vitest),
-dev-сервер и сборка библиотеки читают именно `dist/`, поэтому конвертер собирается первым: корневые скрипты `build`,
-`ts-check`, `test`, `test:e2e`, `check:all` делают это сами; перед запуском скриптов viz напрямую
-(`npm run … -w packages/viz`) выполните `npm run build -w packages/converter`. Vite отдаёт связанный пакет как исходники
-(без пре-бандла), пересобранный `dist/` подхватывается без `--force` — подробности в комментарии
-`packages/viz/vite.config.ts`.
+Порядок сборки. viz видит конвертер как обычный установленный пакет:
+`packages/viz/node_modules/@fozy-labs/statechart-converter` — симлинк на `packages/converter` (протокол `workspace:^`
+в его `dependencies`), который по `exports` ведёт в его `dist/`. Типы (`tsc`), unit-тесты (vitest), dev-сервер и
+сборка библиотеки читают именно `dist/`, поэтому конвертер собирается первым: `pnpm -r run …` идёт в топологическом
+порядке, и корневые скрипты `build`, `ts-check`, `test`, `test:e2e`, `check:all` собирают конвертер сами; перед
+запуском скриптов viz напрямую (`pnpm --filter ./packages/viz run …`) выполните
+`pnpm --filter ./packages/converter run build`. Vite отдаёт связанный пакет как исходники (без пре-бандла),
+пересобранный `dist/` подхватывается без `--force` — подробности в комментарии `packages/viz/vite.config.ts`.
 
 ```
-package.json          корень workspace: скрипты, единственный package-lock.json
+package.json          корень workspace: скрипты, packageManager
+pnpm-workspace.yaml   состав workspace, allowBuilds
+pnpm-lock.yaml        единственный lockfile репозитория
 packages/converter/   @fozy-labs/statechart-converter
 packages/viz/         @fozy-labs/statechart-viz
 ```

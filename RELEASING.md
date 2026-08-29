@@ -5,9 +5,10 @@
 
 ## Предпосылки
 
-- npm-аккаунт с правом публикации в scope `@fozy-labs` (`npm whoami`); при 2FA `npm publish` запросит одноразовый код.
+- npm-аккаунт с правом публикации в scope `@fozy-labs` (`pnpm whoami`); при 2FA код передаётся как `--otp <код>`.
 - `gh auth status` — для тега и GitHub Release.
-- Node ≥ 20.19, Chromium для Playwright (`npx playwright install chromium`).
+- Node ≥ 20.19, pnpm (версия из поля `packageManager`), Chromium для Playwright
+  (`pnpm --filter ./packages/viz exec playwright install chromium`).
 
 ## Шаги
 
@@ -15,16 +16,17 @@
 
    ```bash
    git status --porcelain      # пусто
-   npm ci && npm run check:all
+   pnpm install --frozen-lockfile && pnpm run check:all
    ```
 
-2. Версия `X.Y.Z` в обоих пакетах, без git-тега от npm; затем диапазон converter в viz и lockfile:
+2. Версия `X.Y.Z` в обоих пакетах, без git-тега:
 
    ```bash
-   npm version X.Y.Z -w packages/converter -w packages/viz --no-git-tag-version
-   # packages/viz/package.json → "dependencies": { "@fozy-labs/statechart-converter": "^X.Y.Z" }
-   npm install
+   pnpm version X.Y.Z --filter "@fozy-labs/statechart-*" --no-git-tag-version
    ```
+
+   Диапазон converter в viz править не нужно: он записан как `workspace:^` и подменяется на `^X.Y.Z` при публикации.
+   `pnpm-lock.yaml` версии workspace-пакетов не хранит (там `link:../converter`), поэтому переустановка не требуется.
 
 3. `CHANGELOG.md`: содержимое `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`, ссылки внизу
    (`[Unreleased]: …/compare/vX.Y.Z...HEAD`, `[X.Y.Z]: …/releases/tag/vX.Y.Z`).
@@ -38,15 +40,19 @@
    ```
 
 5. Публикация — порядок важен, viz зависит от converter. `prepublishOnly` каждого пакета пересобирает его `dist`;
-   viz при сборке читает типы converter из его `dist`, поэтому сначала общий `npm run build`.
+   viz при сборке читает типы converter из его `dist`, поэтому сначала общий `pnpm run build`.
 
    ```bash
-   npm run build
-   npm publish -w packages/converter --dry-run   # состав тарбола: dist, README, LICENSE, package.json
-   npm publish -w packages/converter
-   npm publish -w packages/viz --dry-run
-   npm publish -w packages/viz
+   pnpm run build
+   pnpm --filter ./packages/converter publish --dry-run   # состав тарбола: dist, README, LICENSE, package.json
+   pnpm --filter ./packages/converter publish
+   pnpm --filter ./packages/viz publish --dry-run
+   pnpm --filter ./packages/viz publish
    ```
+
+   `pnpm publish` подменяет `workspace:^` на `^X.Y.Z` в публикуемом `package.json` — проверьте это в выводе
+   `--dry-run`. Перед публикацией pnpm требует чистое дерево и ветку `main`, синхронизированную с remote; из другой
+   ветки — `--no-git-checks`.
 
    Предрелиз (`X.Y.Z-rc.N`) публикуется с `--tag rc`, чтобы не сдвигать `latest`.
 
@@ -59,8 +65,8 @@
 7. Проверка:
 
    ```bash
-   npm view @fozy-labs/statechart-converter version
-   npm view @fozy-labs/statechart-viz version
+   pnpm view @fozy-labs/statechart-converter version
+   pnpm view @fozy-labs/statechart-viz version
    ```
 
    и установка в пустой проект: `npm install @fozy-labs/statechart-viz @fozy-labs/rx-toolkit@rc mermaid react react-dom rxjs`.
@@ -72,5 +78,3 @@
 ```bash
 git tag -d vX.Y.Z && git push --delete origin vX.Y.Z
 ```
-
-После `npm publish` версия в реестре необратима (unpublish ограничен 72 часами и политикой npm) — при ошибке выпускается следующая.

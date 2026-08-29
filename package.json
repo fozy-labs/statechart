@@ -17,18 +17,16 @@
   "engines": {
     "node": ">=20.19.0"
   },
-  "workspaces": [
-    "packages/*"
-  ],
+  "packageManager": "pnpm@11.1.2",
   "scripts": {
-    "build": "npm run build -w packages/converter && npm run build -w packages/viz",
-    "ts-check": "npm run build -w packages/converter && npm run ts-check -w packages/converter && npm run ts-check -w packages/viz",
-    "test": "npm run build -w packages/converter && npm run test -w packages/converter && npm run test -w packages/viz",
-    "test:e2e": "npm run build -w packages/converter && npm run test:e2e -w packages/viz",
-    "lint": "npm run lint --workspaces",
-    "lint:fix": "npm run lint:fix --workspaces",
-    "format": "npm run format --workspaces",
-    "format:check": "npm run format:check --workspaces",
-    "check:all": "npm run build && npm run check:all -w packages/converter && npm run check:all -w packages/viz"
+    "build": "pnpm -r run build",
+    "ts-check": "pnpm --filter ./packages/converter run build && pnpm -r run ts-check",
+    "test": "pnpm --filter ./packages/converter run build && pnpm -r run test",
+    "test:e2e": "pnpm --filter ./packages/converter run build && pnpm --filter ./packages/viz run test:e2e",
+    "lint": "pnpm -r run lint",
+    "lint:fix": "pnpm -r run lint:fix",
+    "format": "pnpm -r run format",
+    "format:check": "pnpm -r run format:check",
+    "check:all": "pnpm run build && pnpm -r run check:all"
   }
 }

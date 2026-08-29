@@ -1,0 +1,7 @@
+packages:
+  - "packages/*"
+
+# Dependencies allowed to run install scripts (pnpm blocks them by default).
+# esbuild — vite's bundler, its postinstall unpacks the platform binary.
+allowBuilds:
+  esbuild: true

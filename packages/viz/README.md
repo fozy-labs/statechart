@@ -230,16 +230,16 @@ Markdown вместо `.mmd`: если в тексте есть ```` ```mermaid 
 ## Разработка
 
 ```bash
-npm install            # в корне репозитория; затем npm run build -w packages/converter: конвертер подключён
-                       # workspace-ссылкой и читается из его dist/ (типы, unit-тесты, dev-сервер, сборка)
-npm run dev            # playground: /?fixture=trafficLight|square|parallel|door[&mode=source[&source=<текст>][&machine=<id>]], спайк: /spike/
-npm run ts-check       # против dist/ конвертера и установленного @fozy-labs/rx-toolkit
-npm run test           # vitest (jsdom): core, playground (реальный конвейер), testing, type-тест VizMachine,
-                       # файловые снапшоты src/__tests__/proposal/*.generated.ts — вывод конвертера (обновить: vitest -u)
-npm run test:e2e       # Playwright (chromium) поверх playground'а
-npm run lint / format:check
-npm run build          # dist/index.js + dist/index.d.ts; конвертер и typescript — external
-npm run check:all      # из корня репозитория npm run check:all собирает конвертер и проверяет оба пакета
+pnpm install            # в корне репозитория; затем pnpm --filter ./packages/converter run build: конвертер подключён
+                        # как workspace:^ (симлинк) и читается из его dist/ (типы, unit-тесты, dev-сервер, сборка)
+pnpm run dev            # playground: /?fixture=trafficLight|square|parallel|door[&mode=source[&source=<текст>][&machine=<id>]], спайк: /spike/
+pnpm run ts-check       # против dist/ конвертера и установленного @fozy-labs/rx-toolkit
+pnpm run test           # vitest (jsdom): core, playground (реальный конвейер), testing, type-тест VizMachine,
+                        # файловые снапшоты src/__tests__/proposal/*.generated.ts — вывод конвертера (обновить: vitest -u)
+pnpm run test:e2e       # Playwright (chromium) поверх playground'а
+pnpm run lint / format:check
+pnpm run build          # dist/index.js + dist/index.d.ts; конвертер и typescript — external
+pnpm run check:all      # из корня репозитория pnpm run check:all собирает конвертер и проверяет оба пакета
 ```
 
 Playground в режиме `source` гоняет реальный конвейер по тексту фикстуры (`src/testing/fixtures/*` — примеры

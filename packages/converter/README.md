@@ -22,8 +22,8 @@ mermaid (11.17.2) нужен только тестам как дифференц
 ## Использование
 
 ```bash
-npm run convert -- path/to/square.mmd            # → path/to/square.generated.ts (из packages/converter: build + cli)
-npm run convert -- path/to/square.mmd --out x.ts  # -o x.ts
+pnpm run convert path/to/square.mmd               # → path/to/square.generated.ts (из packages/converter: build + cli)
+pnpm run convert path/to/square.mmd --out x.ts    # -o x.ts
 npx statechart-convert path/to/square.mmd         # в проекте, где пакет установлен
 npx statechart-convert docs/flows.md --all        # все машины документа, см. ниже
 ```
@@ -214,7 +214,7 @@ KIND      := machine | context | event | guard | action | delay
 
 ## Проверки
 
-`npm run check:all` = `ts-check` + `test` + `lint` + `format:check`. Тесты: дифференциальные против
+`pnpm run check:all` = `ts-check` + `test` + `lint` + `format:check`. Тесты: дифференциальные против
 mermaid 11.17.2 (дерево `getRootDocV2()`, размещение по `getData()`, причуды парсера mermaid),
 unit-тесты слоёв, негативные на каждую отвергаемую конструкцию, снапшоты примеров
 `test/fixtures/*.mmd`, round-trip `parse(definition.toMermaid())` = конфиг для набора конфигов

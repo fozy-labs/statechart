@@ -1,7 +1,7 @@
 # Mermaid SVG scheme (browser spike)
 
 Date: 2026-08-28. Mermaid `11.17.2` (pinned devDependency of `packages/viz`), Chromium via Playwright,
-`securityLevel: "strict"` (mermaid default). Reproduce: `npm run dev`, open `/spike/` (`spike/index.html`),
+`securityLevel: "strict"` (mermaid default). Reproduce: `pnpm run dev`, open `/spike/` (`spike/index.html`),
 inspect `window.__spike`; `?securityLevel=loose|sandbox` switches the level.
 
 Diagrams rendered: the proposal's `trafficLight` (compound, `[*]` inside a compound, `%%` directives) and
