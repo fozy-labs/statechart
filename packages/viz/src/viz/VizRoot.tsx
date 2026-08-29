@@ -219,8 +219,9 @@ function useVizApi(resolved: ResolvedMachine): StatechartVizApi {
 
     const payload = payloadResult(payloadState);
     const activeIds = snapshot ? projectActiveIds(snapshot.value) : new Set<string>();
+    // The event is built exactly as in `send`: a payload key named `type` never wins over the event type.
     const canSend = (type: string): boolean =>
-        machine !== null && payload.ok && machine.can({ type, ...payload.value });
+        machine !== null && payload.ok && machine.can({ ...payload.value, type });
 
     const edgeStatuses = computeEdgeStatuses(
         diagram.phase === "ready" ? diagram.index.edges : [],

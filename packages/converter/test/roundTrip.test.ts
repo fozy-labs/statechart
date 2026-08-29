@@ -1,8 +1,8 @@
 /**
  * Round trip: `parse(withDirectives(createMachine(config).toMermaid()))`
  * gives the config back (proposal, section «Тестирование»). The library is
- * the root `src/` at HEAD (vitest alias), so a mismatch is a bug in
- * `toMermaid` or in the parser, never in a stale build.
+ * the installed `@fozy-labs/rx-toolkit` package (no alias, see
+ * vitest.config.ts), so the trip exercises the same build a consumer gets.
  */
 import { createMachine } from "@fozy-labs/rx-toolkit";
 import { describe, expect, it } from "vitest";

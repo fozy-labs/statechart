@@ -299,7 +299,6 @@ describe("parseDiagram", () => {
         });
 
         it("strips `:::class` from a bare declaration", () => {
-            // Currently fails: the `X : description` check runs before the declaration branch and catches `:::`.
             expect(statements("    other:::cls")).toEqual([{ kind: "declaration", line: 2, id: "other", idColumn: 5 }]);
         });
 

@@ -178,6 +178,15 @@ describe("runCli", () => {
             expect(readFileSync(output, "utf8")).toContain('id: "payment"');
         });
 
+        it("honours --out with a single --machine <id>", () => {
+            const input = writeDoc("flows.md");
+            const output = path.join(dir, "custom.ts");
+            const { io, stdout } = capture();
+            expect(runCli([input, "-m", "payment", "-o", output], io)).toBe(0);
+            expect(stdout()).toBe(`${output}\n`);
+            expect(readFileSync(output, "utf8")).toContain('id: "payment"');
+        });
+
         it("honours a per-machine output path", () => {
             const input = writeDoc("flows.md");
             const first = path.join(dir, "a.ts");

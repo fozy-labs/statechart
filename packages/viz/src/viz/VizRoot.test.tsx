@@ -117,6 +117,22 @@ describe("StatechartViz compound API", () => {
         expect(probe.api.log[0].accepted).toBe(true);
     });
 
+    it("canSend and send agree when the payload carries a `type` key (the event type wins)", async () => {
+        renderDoor();
+        await flush();
+        await act(async () => {
+            const row = probe.api.payload.state.rows[0];
+            probe.api.payload.setRow(row.id, { key: "type", text: "OPEN" });
+        });
+
+        // `OPEN` is guard-blocked in `locked`: if the payload's `type` won, both would refuse.
+        expect(probe.api.canSend("PICK_KEY")).toBe(true);
+        await act(async () => {
+            expect(probe.api.send("PICK_KEY")).toBe(true);
+        });
+        expect(probe.api.log[0].event).toEqual({ type: "PICK_KEY" });
+    });
+
     it("mode toggle: the JSON text edits the same payload; broken JSON freezes the Fields segment", async () => {
         renderDoor();
         await flush();

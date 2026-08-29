@@ -149,9 +149,10 @@ function markdownTargets(text: string, args: ConvertArgs): Target[] {
         return blocks.map((block) => ({ block, output: null }));
     }
     if (args.machines.length > 0) {
+        // `parseCliArgs` allows `--out` only alongside a single `--machine <id>` without its own `=<file>`.
         return args.machines.map((machine) => ({
             block: selectStatechartBlock(blocks, machine.id),
-            output: machine.output,
+            output: machine.output ?? args.out,
         }));
     }
     return [{ block: selectStatechartBlock(blocks), output: args.out ?? defaultOutputPath(args.input) }];
