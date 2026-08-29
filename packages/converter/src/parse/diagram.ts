@@ -178,6 +178,12 @@ class DiagramParser {
             if (/^stateDiagram\b/.test(trimmed)) {
                 fail(`only \`${HEADER}\` diagrams are supported`, line.number);
             }
+            if (/^(?:```|~~~)/.test(trimmed)) {
+                fail(
+                    "a markdown code fence is not a diagram; convert the markdown document itself, its ```mermaid blocks are read from there",
+                    line.number,
+                );
+            }
             fail(`expected the \`${HEADER}\` header, got ${JSON.stringify(trimmed)}`, line.number);
         }
         fail(`missing \`${HEADER}\` header`, Math.max(1, this.lines.length));

@@ -10,6 +10,7 @@ mermaid (11.17.2) нужен только тестам как дифференц
 ## Содержание
 
 - [Использование](#использование)
+- [Markdown-документ](#markdown-документ)
 - [Конвейер](#конвейер)
 - [Подмножество mermaid](#подмножество-mermaid)
 - [Подпись перехода](#подпись-перехода)
@@ -24,6 +25,7 @@ mermaid (11.17.2) нужен только тестам как дифференц
 npm run convert -- path/to/square.mmd            # → path/to/square.generated.ts (из packages/converter: build + cli)
 npm run convert -- path/to/square.mmd --out x.ts  # -o x.ts
 npx statechart-convert path/to/square.mmd         # в проекте, где пакет установлен
+npx statechart-convert docs/flows.md --all        # все машины документа, см. ниже
 ```
 
 ```ts
@@ -40,6 +42,53 @@ const source = emit(result, { importFrom: "@fozy-labs/rx-toolkit", fileName: "sq
 завершается с кодом 1 (2 — неверные аргументы). Ошибка `createMachine` приходит с текстом библиотеки,
 `path` — состояние, которому она принадлежит, `line` — строка этого состояния (`states[].line`);
 для корня — строка заголовка.
+
+## Markdown-документ
+
+`.md` — контейнер: каждый ```` ```mermaid ````-блок с директивой `%% @machine` — самостоятельный
+`.mmd`-документ. Между блоками не разделяется ничего (директивы, `@context`, guard'ы — только
+внутри фенса), текст вокруг игнорируется, как и блоки без `@machine`: flowchart, sequence и чужие
+`stateDiagram` в том же файле не мешают.
+
+```bash
+statechart-convert docs/flows.md                    # первая машина → docs/flows.generated.ts
+statechart-convert docs/flows.md -m order           # → docs/order.generated.ts
+statechart-convert docs/flows.md \
+    -m order=src/order.generated.ts \
+    -m payment=src/payment.generated.ts             # свой путь на каждую машину
+statechart-convert docs/flows.md --all              # все машины → <id>.generated.ts рядом
+statechart-convert notes.txt --format md            # формат по расширению; --format его задаёт
+```
+
+`--out` — только при одной машине; при нескольких целях файлы пишутся, лишь когда сконвертировались
+все (ошибка одной машины не оставит документ наполовину сгенерированным).
+
+```ts
+import {
+    convertMarkdown,
+    extractMermaidBlocks,
+    findStatechartBlocks,
+    parseMarkdown,
+    selectStatechartBlock,
+} from "@fozy-labs/statechart-converter";
+
+const blocks = findStatechartBlocks(md); // блоки с @machine: { text, line, column, info, machineId?, machineLine }
+const block = selectStatechartBlock(blocks, "order"); // без имени — первый
+const { code } = convertMarkdown(md, { fileName: "flows.md", machine: "order" });
+const parsed = parseMarkdown(md); // первая машина документа
+extractMermaidBlocks(md); // все mermaid-блоки, включая чужие диаграммы
+```
+
+- Фенсы разбираются по правилам CommonMark: 3+ `` ` `` или `~`, отступ ≤ 3 пробелов, закрывающий —
+  тот же символ и не короче, info-string начинается с `mermaid` (регистр не важен, `mermaid title="X"`
+  подходит). Сканируются все фенсы, а не только mermaid: ``` внутри ````` ````ts ````` не обрывает
+  блок. Незакрытый mermaid-блок — ошибка, отступ фенса снимается с содержимого.
+- Строки и колонки ошибок — координаты документа, а не блока: `flows.md:57:12: …`. Позиции в
+  `ParseResult` (`states[].line`, тела директив) — тоже, поэтому потребитель результата
+  (`validateMachineConfig`, компиляция тел в viz) сообщает строки документа.
+- `config.source` и `source` сгенерированного файла — текст блока, дословно; заголовок файла —
+  `// AUTO-GENERATED from flows.md (@machine order) — do not edit`.
+- Два блока с одинаковым `@machine` — ошибка: документ перестал бы адресоваться по имени.
 
 ## Конвейер
 

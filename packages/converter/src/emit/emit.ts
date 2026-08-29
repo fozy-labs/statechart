@@ -98,10 +98,11 @@ class Emitter {
     }
 
     private header(): string {
-        const { fileName } = this.options;
-        return fileName === undefined
+        const { fileName, sourceLabel } = this.options;
+        const label = sourceLabel ?? (fileName === undefined ? undefined : baseName(fileName));
+        return label === undefined
             ? "// AUTO-GENERATED — do not edit"
-            : `// AUTO-GENERATED from ${baseName(fileName)} — do not edit`;
+            : `// AUTO-GENERATED from ${label} — do not edit`;
     }
 
     // --- types ---------------------------------------------------------------

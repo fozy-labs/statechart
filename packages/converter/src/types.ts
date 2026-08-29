@@ -108,6 +108,8 @@ export interface EmitOptions {
     importFrom?: string;
     /** Source file name for the header comment; only its base name is written. */
     fileName?: string;
+    /** Replaces the file name in the header comment; markdown conversion writes `doc.md (@machine order)`. */
+    sourceLabel?: string;
 }
 
 export interface ConvertOptions extends EmitOptions {

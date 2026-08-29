@@ -11,6 +11,10 @@ import { validateMachineConfig } from "./validateMachineConfig.js";
 export function convert(text: string, options: ConvertOptions): ConvertResult {
     const parsed = parse(text);
     validateMachineConfig(parsed);
-    const code = emit(parsed, { fileName: options.fileName, importFrom: options.importFrom });
+    const code = emit(parsed, {
+        fileName: options.fileName,
+        importFrom: options.importFrom,
+        sourceLabel: options.sourceLabel,
+    });
     return { code, parsed };
 }
