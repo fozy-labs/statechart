@@ -10,8 +10,9 @@ import type { VizMachine } from "../types";
  * default `machine` mode mounts `StatechartViz` on the fake machine,
  * `?mode=source` runs the real pipeline on the fixture's `.mmd` text (the
  * proposal's `square` and `trafficLight` examples verbatim) or on the text of
- * `?source=`. `window.__scvPlayground` exposes the running machine to e2e
- * tests: the fake one, or the source-mode machine once its pipeline succeeded.
+ * `?source=` — a `.mmd` text or a markdown document, whose machine `?machine=`
+ * picks. `window.__scvPlayground` exposes the running machine to e2e tests:
+ * the fake one, or the source-mode machine once its pipeline succeeded.
  */
 
 declare global {
@@ -30,6 +31,9 @@ const mode = params.get("mode") === "source" ? "source" : "machine";
 const fixture = fixtures[fixtureName] ?? fixtures.trafficLight;
 // A submitted textarea arrives with CRLF line ends.
 const source = params.get("source")?.replace(/\r\n?/g, "\n") ?? fixture.source;
+// An empty field of the form means "the first machine of the document".
+const machineParam = params.get("machine");
+const machineId = machineParam === null || machineParam === "" ? undefined : machineParam;
 const fakeMachine = mode === "machine" ? createFakeVizMachine(fixture) : null;
 
 const playground: NonNullable<Window["__scvPlayground"]> = { fixture, mode, machine: fakeMachine };
@@ -56,6 +60,7 @@ function Playground() {
                 ) : (
                     <StatechartViz
                         source={source}
+                        machineId={machineId}
                         title={`${fixture.name} (source)`}
                         onMachine={(machine) => {
                             playground.machine = machine;
@@ -68,7 +73,7 @@ function Playground() {
     );
 }
 
-/** Edits the `.mmd` text of source mode; a GET submit re-runs the pipeline on it. */
+/** Edits the source text (`.mmd` or markdown) and the machine to run; a GET submit re-runs the pipeline. */
 function SourceForm() {
     return (
         <form method="get" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
@@ -82,7 +87,13 @@ function SourceForm() {
                 data-playground-source=""
                 style={{ flex: 1, font: "12px/1.4 ui-monospace, Menlo, Consolas, monospace" }}
             />
-            <button type="submit">Run</button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <label style={{ font: "12px system-ui, sans-serif", display: "flex", flexDirection: "column" }}>
+                    machine
+                    <input name="machine" defaultValue={machineId ?? ""} size={14} data-playground-machine="" />
+                </label>
+                <button type="submit">Run</button>
+            </div>
         </form>
     );
 }

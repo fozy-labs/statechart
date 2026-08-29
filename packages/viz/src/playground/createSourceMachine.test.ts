@@ -5,6 +5,8 @@ import { parallelFixture, squareFixture, trafficLightFixture } from "../testing/
 
 import {
     createSourceMachine,
+    looksLikeMarkdown,
+    resolveDiagramSource,
     SourceMachineError,
     type SourceMachine,
     type SourceMachineOptions,
@@ -51,6 +53,16 @@ async function expectFailure(source: string): Promise<SourceMachineError> {
 
 /** The directive line of the square fixture that the error tests rewrite. */
 const SQUARE_GUARD = "%% @guard isFinite: Number.isFinite(event.value)";
+
+/** Wraps `.mmd` texts into a markdown document; the first block starts at line 4. */
+function inMarkdown(...diagrams: string[]): string {
+    const lines = ["# Flows", ""];
+    for (const diagram of diagrams) lines.push("```mermaid", diagram.trimEnd(), "```", "");
+    return lines.join("\n");
+}
+
+/** Lines the document adds before the first block: its title, a blank line and the fence. */
+const MARKDOWN_OFFSET = 3;
 
 describe("createSourceMachine", () => {
     beforeEach(() => {
@@ -201,6 +213,98 @@ describe("createSourceMachine", () => {
         expect(reported.message).toContain("Cannot read properties of undefined");
         expect(square$()).toMatchObject({ status: "error", value: "idle", error: reported });
         expect(square$.status).toBe("stopped");
+    });
+
+    it("runs the first machine of a markdown document", async () => {
+        const doc = inMarkdown(squareFixture.source, trafficLightFixture.source);
+        const square$ = await create(doc);
+
+        expect(square$.definition.id).toBe("square");
+        // The machine runs the block, not the document: `source` is what the viz renders.
+        expect(square$.definition.source).toBe(squareFixture.source.trimEnd());
+        square$.send({ type: "SQUARE", value: 12 });
+        expect(square$()).toMatchObject({ value: "done", context: { result: 144 } });
+    });
+
+    it("runs the machine named by machineId", async () => {
+        const doc = inMarkdown(squareFixture.source, trafficLightFixture.source);
+        const light$ = await create(doc, { machineId: "trafficLight", clock: createManualClock() });
+
+        expect(light$.definition.id).toBe("trafficLight");
+        expect(light$.definition.source).toBe(trafficLightFixture.source.trimEnd());
+    });
+
+    it("reports a parse error at its line in the document", async () => {
+        const error = await expectFailure(
+            inMarkdown(squareFixture.source.replace(SQUARE_GUARD, "%% @guard isFinite: Number.isFinite(event.value")),
+        );
+        expect(error.stage).toBe("parse");
+        expect(error.line).toBe(9 + MARKDOWN_OFFSET);
+        expect(error.message).toMatch(/^Parse error, line 12:\d+: syntax error in @guard isFinite: /);
+    });
+
+    it("reports a compile error at its line in the document", async () => {
+        const error = await expectFailure(
+            inMarkdown(
+                squareFixture.source.replace(
+                    SQUARE_GUARD,
+                    "%% @guard isFinite: Number.isFinite(event.value as number)",
+                ),
+            ),
+        );
+        expect(error.stage).toBe("compile");
+        expect(error.line).toBe(9 + MARKDOWN_OFFSET);
+        expect(error.message).toMatch(/^Compile error, line 12: @guard isFinite: /);
+    });
+
+    it("fails when the document has no machine with the requested id", async () => {
+        let caught: unknown;
+        try {
+            created.push(await createSourceMachine(inMarkdown(squareFixture.source), { machineId: "trafficLight" }));
+        } catch (error) {
+            caught = error;
+        }
+        expect(caught).toBeInstanceOf(SourceMachineError);
+        expect((caught as SourceMachineError).message).toContain(
+            "no machine `trafficLight` in the document (available: square)",
+        );
+    });
+
+    it("fails when machineId does not match a plain .mmd source", async () => {
+        let caught: unknown;
+        try {
+            created.push(await createSourceMachine(squareFixture.source, { machineId: "trafficLight" }));
+        } catch (error) {
+            caught = error;
+        }
+        expect(caught).toBeInstanceOf(SourceMachineError);
+        expect((caught as SourceMachineError).message).toBe(
+            "Parsing failed: no machine `trafficLight` in the source (it declares `square`)",
+        );
+    });
+});
+
+describe("resolveDiagramSource", () => {
+    it("returns a plain .mmd text unchanged", async () => {
+        expect(await resolveDiagramSource(squareFixture.source)).toBe(squareFixture.source);
+    });
+
+    it("returns the block of the selected machine", async () => {
+        const doc = inMarkdown(squareFixture.source, trafficLightFixture.source);
+        expect(await resolveDiagramSource(doc)).toBe(squareFixture.source.trimEnd());
+        expect(await resolveDiagramSource(doc, "trafficLight")).toBe(trafficLightFixture.source.trimEnd());
+    });
+
+    it("falls back to the document when the selection fails (the pipeline reports why)", async () => {
+        const doc = inMarkdown(squareFixture.source);
+        expect(await resolveDiagramSource(doc, "missing")).toBe(doc);
+    });
+});
+
+describe("looksLikeMarkdown", () => {
+    it("is true only for a text with a code fence", () => {
+        expect(looksLikeMarkdown(squareFixture.source)).toBe(false);
+        expect(looksLikeMarkdown(inMarkdown(squareFixture.source))).toBe(true);
     });
 });
 

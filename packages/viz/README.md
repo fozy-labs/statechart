@@ -20,8 +20,14 @@ mermaid (`stateDiagram-v2`): подсветка активных состоян�
 
 ```ts
 type StatechartVizProps =
-    | { machine: VizMachine; title?: string }                    // режим machine
-    | { source: string; title?: string; onMachine?: (machine: DisposableVizMachine | null) => void }; // режим source
+    | { machine: VizMachine; title?: string } // режим machine
+    | {
+          // режим source
+          source: string; // .mmd или markdown-документ с диаграммой в ```mermaid-блоке
+          machineId?: string; // какую машину документа запускать; по умолчанию первую
+          title?: string;
+          onMachine?: (machine: DisposableVizMachine | null) => void;
+      };
 ```
 
 `VizMachine` — структурное подмножество `MachineStateSignal` библиотеки; `MachineSignal.state(definition)`
@@ -53,7 +59,7 @@ interface VizMachine<TContext = unknown, TEvent extends { type: string } = { typ
 | Режим     | Что рендерится                                  | Откуда код guards/actions                          |
 |-----------|-------------------------------------------------|----------------------------------------------------|
 | `machine` | `definition.source ?? definition.toMermaid()`   | из определения машины (сгенерированный TS), без eval |
-| `source`  | переданный текст `.mmd`                         | тела директив `%% @…` компилируются через `new Function` |
+| `source`  | текст `.mmd` или выбранный блок markdown-документа | тела директив `%% @…` компилируются через `new Function` |
 
 Взаимодействие (общее для режимов):
 
@@ -80,6 +86,11 @@ flowchart LR
 `parse` и `validateMachineConfig` — из [конвертера](../converter/README.md) (там же грамматика и директивы);
 `createMachine`, `mutate`, `MachineSignal` — из библиотеки. `@context initial` передаётся в `createMachine`
 фабрикой: каждый экземпляр и каждый рестарт вычисляют выражение заново.
+
+Markdown вместо `.mmd`: если в тексте есть ```` ```mermaid ````-блок с `%% @machine`, конвейер работает над
+блоком — его же рендерит диаграмма (`resolveDiagramSource`), а `machineId` выбирает машину из документа
+(по умолчанию первая; неизвестное имя — ошибка со списком доступных). Строки в уведомлениях — координаты
+документа, не блока. Правила разбора блоков — в [конвертере](../converter/README.md#markdown-документ).
 
 - Конвертер (и компилятор TypeScript, от которого он зависит) грузится `import()` при первом вызове — так же,
   как `mermaid`. Режим `machine` его не трогает: хост, собирающий viz только для него, парсер не получает.
@@ -133,7 +144,7 @@ flowchart LR
 ```bash
 npm install            # в корне репозитория; затем npm run build -w packages/converter: конвертер подключён
                        # workspace-ссылкой и читается из его dist/ (типы, unit-тесты, dev-сервер, сборка)
-npm run dev            # playground: /?fixture=trafficLight|square|parallel[&mode=source[&source=<текст>]], спайк: /spike/
+npm run dev            # playground: /?fixture=trafficLight|square|parallel[&mode=source[&source=<текст>][&machine=<id>]], спайк: /spike/
 npm run ts-check       # против dist/ конвертера и установленного @fozy-labs/rx-toolkit
 npm run test           # vitest (jsdom): core, playground (реальный конвейер), testing, type-тест VizMachine,
                        # файловые снапшоты src/__tests__/proposal/*.generated.ts — вывод конвертера (обновить: vitest -u)

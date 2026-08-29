@@ -12,7 +12,12 @@ import {
     type ClickTarget,
     type HighlightState,
 } from "./core/svgIndex";
-import { createSourceMachine, type SourceMachine } from "./playground/createSourceMachine";
+import {
+    createSourceMachine,
+    looksLikeMarkdown,
+    resolveDiagramSource,
+    type SourceMachine,
+} from "./playground/createSourceMachine";
 import { BASE_CSS, diagramCss } from "./styles";
 import type { DisposableVizMachine, StatechartVizProps, VizEvent, VizMachine, VizSnapshot } from "./types";
 
@@ -20,7 +25,8 @@ import type { DisposableVizMachine, StatechartVizProps, VizEvent, VizMachine, Vi
  * Interactive mermaid view of a statechart. `machine` mode renders
  * `definition.source ?? definition.toMermaid()` and follows the running
  * machine; `source` mode runs the playground pipeline (see
- * `playground/createSourceMachine`).
+ * `playground/createSourceMachine`) over a `.mmd` text or over one
+ * ```` ```mermaid ```` block of a markdown document.
  */
 export function StatechartViz(props: StatechartVizProps) {
     if ("machine" in props) {
@@ -28,7 +34,9 @@ export function StatechartViz(props: StatechartVizProps) {
         const source = machine.definition.source ?? machine.definition.toMermaid();
         return <VizFrame machine={machine} source={source} title={props.title ?? machine.definition.id} />;
     }
-    return <SourceViz source={props.source} title={props.title} onMachine={props.onMachine} />;
+    return (
+        <SourceViz source={props.source} machineId={props.machineId} title={props.title} onMachine={props.onMachine} />
+    );
 }
 
 type SourceState =
@@ -36,6 +44,7 @@ type SourceState =
 
 type SourceVizProps = {
     source: string;
+    machineId?: string;
     title?: string;
     onMachine?: (machine: DisposableVizMachine | null) => void;
 };
@@ -50,18 +59,37 @@ function messageOf(error: unknown): string {
  * rehearsal) dispose it. Pipeline failures and runtime errors of bodies go to
  * the notice area.
  */
-function SourceViz({ source, title, onMachine }: SourceVizProps) {
-    const state$ = useConstant(() => Signal.state<SourceState>({ phase: "loading" }), [source]);
-    const runtimeError$ = useConstant(() => Signal.state<string | null>(null), [source]);
+function SourceViz({ source, machineId, title, onMachine }: SourceVizProps) {
+    const state$ = useConstant(() => Signal.state<SourceState>({ phase: "loading" }), [source, machineId]);
+    const runtimeError$ = useConstant(() => Signal.state<string | null>(null), [source, machineId]);
+    // A markdown document renders the selected block, known once the converter
+    // is loaded; a plain `.mmd` text renders at once (empty = still resolving).
+    const diagram$ = useConstant(() => Signal.state(looksLikeMarkdown(source) ? "" : source), [source, machineId]);
     const onMachineRef = useRef(onMachine);
     useLayoutEffect(() => {
         onMachineRef.current = onMachine;
     });
 
     useEffect(() => {
+        if (!looksLikeMarkdown(source)) return;
+        let cancelled = false;
+        void resolveDiagramSource(source, machineId).then(
+            (text) => {
+                if (!cancelled) diagram$.set(text);
+            },
+            // A converter that fails to load fails the pipeline below too, and that failure is the notice.
+            () => undefined,
+        );
+        return () => {
+            cancelled = true;
+        };
+    }, [source, machineId, diagram$]);
+
+    useEffect(() => {
         let cancelled = false;
         let machine: SourceMachine | null = null;
         createSourceMachine(source, {
+            machineId,
             onError: (error) => runtimeError$.set(`Runtime error: ${messageOf(error)}`),
         }).then(
             (created) => {
@@ -84,16 +112,17 @@ function SourceViz({ source, title, onMachine }: SourceVizProps) {
                 onMachineRef.current?.(null);
             }
         };
-    }, [source, state$, runtimeError$]);
+    }, [source, machineId, state$, runtimeError$]);
 
     const state = useSignal(state$);
     const runtimeError = useSignal(runtimeError$);
+    const diagramSource = useSignal(diagram$);
     const machine = state.phase === "ready" ? state.machine : null;
     const notice = state.phase === "error" ? state.message : (runtimeError ?? undefined);
     return (
         <VizFrame
             machine={machine}
-            source={source}
+            source={diagramSource}
             title={title ?? machine?.definition.id ?? "statechart"}
             notice={notice}
         />
@@ -161,10 +190,11 @@ type DiagramState =
     | { phase: "ready"; svgId: string; svg: string; index: DiagramIndex }
     | { phase: "error"; message: string };
 
-/** Renders the source once (per source text) through mermaid. */
+/** Renders the source once (per source text) through mermaid; the empty text means "not resolved yet". */
 function useDiagram(source: string): DiagramState {
     const state$ = useConstant(() => Signal.state<DiagramState>({ phase: "loading" }), [source]);
     useEffect(() => {
+        if (source === "") return;
         let cancelled = false;
         const svgId = nextSvgId();
         (async () => {

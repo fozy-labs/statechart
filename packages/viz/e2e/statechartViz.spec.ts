@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { squareFixture } from "../src/testing/fixtures/square";
+import { trafficLightFixture } from "../src/testing/fixtures/trafficLight";
 
 type PlaygroundWindow = Window & {
     __scvPlayground?: { machine: { send(event: { type: string }): void } | null };
@@ -20,6 +21,13 @@ function activeStates(page: Page): Promise<string[]> {
 
 function send(page: Page, event: { type: string }) {
     return page.evaluate((ev) => (window as PlaygroundWindow).__scvPlayground?.machine?.send(ev), event);
+}
+
+/** Wraps `.mmd` texts into a markdown document; the first block starts at line 4. */
+function markdown(...diagrams: string[]): string {
+    const lines = ["# Flows", ""];
+    for (const diagram of diagrams) lines.push("```mermaid", diagram.trimEnd(), "```", "");
+    return lines.join("\n");
 }
 
 const edgeLabel = (page: Page, event: string) => page.locator(`g.edgeLabel[data-scv-event="${event}"]`);
@@ -207,6 +215,30 @@ test.describe("source mode", () => {
         await send(page, { type: "RESET" });
         await expect.poll(() => activeStates(page)).toEqual(["off"]);
         await expect(context(page)).toContainText('"retries": 1');
+    });
+
+    test("a markdown document runs and renders the block named by ?machine=", async ({ page }) => {
+        const doc = markdown(squareFixture.source, trafficLightFixture.source);
+        await page.goto(`/?fixture=square&mode=source&source=${encodeURIComponent(doc)}&machine=trafficLight`);
+        await expect(page.locator('[data-scv-diagram="ready"]')).toBeVisible();
+        await expect(status(page)).toHaveText("active");
+        expect(await activeStates(page)).toEqual(["off"]);
+        // Only the selected block is rendered — `idle` belongs to the other machine.
+        await expect(page.locator('[data-scv-state="idle"]')).toHaveCount(0);
+
+        await edgeLabel(page, "POWER_ON").locator("span.edgeLabel").click();
+        await expect.poll(() => activeStates(page)).toEqual(["green", "working"]);
+    });
+
+    test("an error inside a markdown block is reported at its line in the document", async ({ page }) => {
+        const broken = squareFixture.source.replace(
+            "%% @guard isFinite: Number.isFinite(event.value)",
+            "%% @guard isFinite: Number.isFinite(event.value",
+        );
+        await page.goto(`/?fixture=square&mode=source&source=${encodeURIComponent(markdown(broken))}`);
+        // The guard sits on line 9 of the diagram and on line 12 of the document.
+        await expect(page.locator("[data-scv-notice]")).toContainText("Parse error, line 12:");
+        await expect(status(page)).toHaveCount(0);
     });
 
     test("a body syntax error is reported with the directive's line and no machine runs", async ({ page }) => {

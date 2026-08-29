@@ -100,12 +100,18 @@ export interface DisposableVizMachine<TContext = unknown, TEvent extends VizEven
     dispose(): void;
 }
 
-/** Props of `StatechartViz`: a running machine or raw `.mmd` text. */
+/** Props of `StatechartViz`: a running machine, or `.mmd` text / a markdown document holding it. */
 export type StatechartVizProps =
     | { machine: VizMachine; title?: string }
     | {
+          /** `.mmd` text, or a markdown document with the diagram in a ```mermaid block. */
           source: string;
           title?: string;
+          /**
+           * Machine of a markdown document to run (`%% @machine <id>`); the
+           * first one of the document by default.
+           */
+          machineId?: string;
           /**
            * Receives the machine created from `source` once the pipeline
            * succeeded, and `null` when that machine is disposed (source

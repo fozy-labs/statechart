@@ -8,7 +8,7 @@ import {
     type MachineContext,
     type MachineStateSignal,
 } from "@fozy-labs/rx-toolkit";
-import type { ParseResult, StatechartParseError } from "@fozy-labs/statechart-converter";
+import type { ParseResult, StatechartBlock, StatechartParseError } from "@fozy-labs/statechart-converter";
 
 import { CompileError, compileImplementations, toMachineImplementations } from "./compileImplementations";
 
@@ -30,6 +30,12 @@ export type SourceMachineOptions = {
     onError?: (error: unknown) => void;
     /** Redux DevTools key of the machine signal. */
     key?: string;
+    /**
+     * Machine of a markdown document to run (`%% @machine <id>`); the first
+     * one by default. Ignored shape-wise for a plain `.mmd` text, where it
+     * only has to agree with the `@machine` of that text.
+     */
+    machineId?: string;
 };
 
 type Converter = typeof import("@fozy-labs/statechart-converter");
@@ -45,6 +51,39 @@ let converterModule: Promise<Converter> | undefined;
 function loadConverter(): Promise<Converter> {
     converterModule ??= import("@fozy-labs/statechart-converter");
     return converterModule;
+}
+
+const FENCE_LINE = /^ {0,3}(?:```|~~~)/m;
+
+/**
+ * Cheap test for a markdown container: a plain `.mmd` text has no code fence.
+ * Only decides whether the block has to be extracted (which needs the lazily
+ * loaded converter) — the extraction itself follows the converter's rules.
+ */
+export function looksLikeMarkdown(source: string): boolean {
+    return FENCE_LINE.test(source);
+}
+
+/** The block of a markdown document to run, or `null` when the text is a plain `.mmd` document. */
+function selectBlock(converter: Converter, source: string, machineId: string | undefined): StatechartBlock | null {
+    const blocks = converter.findStatechartBlocks(source);
+    if (blocks.length === 0) return null;
+    return converter.selectStatechartBlock(blocks, machineId);
+}
+
+/**
+ * The diagram text to render: the selected block of a markdown document, or
+ * the source itself. A selection failure falls back to the source — the same
+ * failure surfaces from `createSourceMachine` as a notice.
+ */
+export async function resolveDiagramSource(source: string, machineId?: string): Promise<string> {
+    if (!looksLikeMarkdown(source)) return source;
+    const converter = await loadConverter();
+    try {
+        return selectBlock(converter, source, machineId)?.text ?? source;
+    } catch {
+        return source;
+    }
 }
 
 const STAGE_LABELS: Record<SourceStage, string> = {
@@ -157,8 +196,20 @@ function toMachineConfig(
     };
 }
 
+/** `parse` of the text, or of the selected block when the text is a markdown document. */
+function parseSource(converter: Converter, source: string, machineId: string | undefined): ParseResult {
+    const block = selectBlock(converter, source, machineId);
+    if (block !== null) return converter.parseStatechartBlock(block);
+    const parsed = converter.parse(source);
+    if (machineId !== undefined && parsed.machineId !== machineId) {
+        throw new Error(`no machine \`${machineId}\` in the source (it declares \`${parsed.machineId}\`)`);
+    }
+    return parsed;
+}
+
 /**
- * Playground pipeline: `.mmd` text → running machine.
+ * Playground pipeline: `.mmd` text (or a markdown document holding it in a
+ * ```` ```mermaid ```` block) → running machine.
  * `parse(source)` → `validateMachineConfig(parsed)` → `compileImplementations(parsed)`
  * → `toMachineImplementations(compiled, mutate)` → `createMachine(config, implementations)`
  * → `MachineSignal.state(definition)`. Rejects with `SourceMachineError`; the
@@ -166,7 +217,7 @@ function toMachineConfig(
  */
 export async function createSourceMachine(source: string, options: SourceMachineOptions = {}): Promise<SourceMachine> {
     const converter = await loadConverter();
-    const parsed = runStage("parse", () => converter.parse(source));
+    const parsed = runStage("parse", () => parseSource(converter, source, options.machineId));
     runStage("validate", () => converter.validateMachineConfig(parsed));
     const compiled = runStage("compile", () => compileImplementations(parsed));
     const implementations = toMachineImplementations(compiled, mutate);

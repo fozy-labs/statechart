@@ -34,6 +34,8 @@ export { parseTransitionLabel, type TransitionLabel, type TransitionTrigger } fr
 export * from "./playground";
 export {
     createSourceMachine,
+    looksLikeMarkdown,
+    resolveDiagramSource,
     SourceMachineError,
     type SourceMachine,
     type SourceMachineOptions,
