@@ -1,6 +1,6 @@
 {
   "name": "@fozy-labs/statechart-converter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Converts Mermaid stateDiagram-v2 files with %% @directives into typed @fozy-labs/rx-toolkit statechart definitions",
   "author": "Vladimir Panev <vova6255@gmail.com>",
   "license": "MIT",

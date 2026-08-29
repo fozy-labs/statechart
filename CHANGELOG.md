@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-29
+
 ### Added
 - **converter** — markdown как контейнер: каждый ```` ```mermaid ````-блок с `%% @machine` — самостоятельная
   машина. `extractMermaidBlocks` / `findStatechartBlocks` / `selectStatechartBlock` (разбор фенсов по правилам
@@ -32,5 +34,6 @@
   состояний, отправка событий кликом по переходу, лог событий, `context`) и режим `source` (текст `.mmd` →
   parse → `new Function` → `MachineSignal`; конвертер и TypeScript загружаются лениво).
 
-[Unreleased]: https://github.com/fozy-labs/statechart/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/fozy-labs/statechart/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/fozy-labs/statechart/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/fozy-labs/statechart/releases/tag/v0.1.0

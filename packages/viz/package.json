@@ -1,6 +1,6 @@
 {
   "name": "@fozy-labs/statechart-viz",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Interactive mermaid-based visualizer for rx-toolkit statecharts",
   "author": "Vladimir Panev <vova6255@gmail.com>",
   "license": "MIT",
@@ -47,7 +47,7 @@
     "check:all": "npm run ts-check && npm run test && npm run lint && npm run format:check && npm run test:e2e"
   },
   "dependencies": {
-    "@fozy-labs/statechart-converter": "^0.1.0",
+    "@fozy-labs/statechart-converter": "^0.2.0",
     "svg-pan-zoom": "^3.6.2"
   },
   "peerDependencies": {
