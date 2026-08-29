@@ -1,8 +1,8 @@
 # statechart
 
 Инструменты для statechart-модуля [`@fozy-labs/rx-toolkit`](https://github.com/fozy-labs/rx-toolkit): машина описывается
-одним `.mmd`-файлом (mermaid `stateDiagram-v2` + директивы `%% @…`), конвертер превращает его в типизированный
-`createMachine`, viz показывает живую диаграмму.
+mermaid-диаграммой `stateDiagram-v2` с директивами `%% @…` — отдельным `.mmd`-файлом или блоком в `.md`, —
+конвертер превращает её в типизированный `createMachine`, viz показывает живую диаграмму.
 
 ## Содержание
 
@@ -17,12 +17,12 @@
 
 | Пакет                             | Каталог                                                | Что делает                                                                                                                       |
 |-----------------------------------|--------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| `@fozy-labs/statechart-converter` | [`packages/converter`](packages/converter/README.md)   | Node-библиотека и CLI `statechart-convert`: `.mmd` → `*.generated.ts` (`Context`, `Events`, `StateId`, `source`, `definition`) |
+| `@fozy-labs/statechart-converter` | [`packages/converter`](packages/converter/README.md)   | Node-библиотека и CLI `statechart-convert`: `.mmd` или `.md` → `*.generated.ts` (`Context`, `Events`, `StateId`, `source`, `definition`) |
 | `@fozy-labs/statechart-viz`       | [`packages/viz`](packages/viz/README.md)               | React-компонент `StatechartViz`: диаграмма mermaid с подсветкой активных состояний, отправка событий кликом, лог и `context`    |
 
 ```mermaid
 flowchart LR
-    MMD["square.mmd<br/>директивы + диаграмма"]
+    MMD["square.mmd или блок в docs.md<br/>директивы + диаграмма"]
     MMD -- "statechart-convert<br/>(packages/converter)" --> GEN["square.generated.ts<br/>Context, Events, StateId, source, definition"]
     GEN -- "MachineSignal.state(definition)" --> RT["MachineSignal<br/>(@fozy-labs/rx-toolkit)"]
     RT -- "режим machine" --> VIZ["StatechartViz<br/>(packages/viz)"]
@@ -55,9 +55,11 @@ node packages/converter/dist/cli.js path/to/square.mmd --out x.ts
 # как зависимость проекта
 npm install --save-dev @fozy-labs/statechart-converter
 npx statechart-convert path/to/square.mmd
+npx statechart-convert docs/flows.md --all        # каждая машина документа → <id>.generated.ts
 ```
 
-Программный API (`convert`, `parse`, `emit`, `validateMachineConfig`, `StatechartParseError`) —
+Программный API (`convert`, `parse`, `emit`, `validateMachineConfig`, `StatechartParseError`) и работа с
+markdown (`convertMarkdown`, `findStatechartBlocks`, выбор машины) —
 в [README конвертера](packages/converter/README.md#использование).
 
 ### Viz
@@ -75,8 +77,9 @@ const square$ = MachineSignal.state(square);
 <StatechartViz machine={square$} />;
 ```
 
-Режим `source` (текст `.mmd` вместо машины) подгружает конвертер и компилятор TypeScript через `import()` и исполняет
-тела директив через `new Function` — следствия для CSP в [README viz](packages/viz/README.md#правило-eval--csp).
+Режим `source` (текст `.mmd` или markdown-документ вместо машины; `machineId` выбирает машину документа) подгружает
+конвертер и компилятор TypeScript через `import()` и исполняет тела директив через `new Function` — следствия для CSP
+в [README viz](packages/viz/README.md#правило-eval--csp).
 
 ## Разработка
 

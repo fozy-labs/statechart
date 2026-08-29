@@ -6,6 +6,18 @@
 
 ## [Unreleased]
 
+### Added
+- **converter** — markdown как контейнер: каждый ```` ```mermaid ````-блок с `%% @machine` — самостоятельная
+  машина. `extractMermaidBlocks` / `findStatechartBlocks` / `selectStatechartBlock` (разбор фенсов по правилам
+  CommonMark, чужие диаграммы пропускаются), `parseMarkdown` / `convertMarkdown` / `parseStatechartBlock` /
+  `convertStatechartBlock` — с позициями ошибок и `ParseResult` в координатах документа. CLI: вход `.md`
+  (или `--format md`), `--machine <id[=file]>` (повторяемый), `--all`; при нескольких целях файлы пишутся,
+  только если сконвертировались все. Заголовок сгенерированного файла — `from flows.md (@machine order)`;
+  `EmitOptions.sourceLabel` задаёт его вручную.
+- **viz** — режим `source` принимает markdown-документ: проп `machineId` выбирает машину (по умолчанию первая),
+  диаграмма рендерит выбранный блок (`resolveDiagramSource`, `looksLikeMarkdown`), строки в уведомлениях —
+  координаты документа. В playground'е — параметр `?machine=` и поле в форме.
+
 ## [0.1.0] - 2026-08-29
 
 Первый релиз: извлечение из [fozy-labs/rx-toolkit](https://github.com/fozy-labs/rx-toolkit)
