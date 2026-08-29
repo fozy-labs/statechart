@@ -323,28 +323,53 @@ table is also exported as `THEME_TOKENS`.
 
 | Token | Default | Paints |
 | --- | --- | --- |
-| `--scv-bg` | `#fff` | the diagram field, inputs, buttons |
-| `--scv-panel` | `#fafafa` | side panel backgrounds |
-| `--scv-text` | `#222` | body text |
-| `--scv-muted` | `#7a7a7a` | secondary text: panel titles, hints, log timestamps |
-| `--scv-border` | `#d9d9d9` | panel and diagram borders |
-| `--scv-border-strong` | `#b5b5b5` | borders of interactive controls |
-| `--scv-active` | `#d0342c` | the outline of an active state |
-| `--scv-active-fill` | `#fff0ee` | the fill of an active state |
+| `--scv-bg` | `#fff` | the diagram field, inputs, buttons, and the interior of every inert state |
+| `--scv-panel` | `#fff` | side panel backgrounds — equal to the field, see below |
+| `--scv-text` | `#222` | body text, and the state labels inside the diagram |
+| `--scv-muted` | `#7a7a7a` | secondary text: panel titles, hints, log timestamps, inert edge labels |
+| `--scv-border` | `#d9d9d9` | panel and diagram borders, composite outlines |
+| `--scv-border-strong` | `#b5b5b5` | borders of interactive controls, outlines of inert states |
+| `--scv-active` | `#6d28d9` | the outline of an active state |
+| `--scv-active-fill` | `#e9dffb` | the fill of an active state |
 | `--scv-selected` | `#1a6ee0` | the outline of the selected state |
 | `--scv-enabled` | `#1f8a3b` | enabled transitions and their buttons |
 | `--scv-blocked` | `#b45309` | guard-blocked transitions and guard badges |
-| `--scv-error` | `#b00020` | error text |
+| `--scv-error` | `#b00020` | error text, and the `error` machine status |
+
+Each predicate owns one instrument, and none carries two — that is what the defaults are chosen for, so a re-theme
+that keeps the mapping keeps the diagram readable:
+
+| The diagram says | with |
+| --- | --- |
+| the machine is here | the only filled node, plus the heaviest outline in the field |
+| you picked this | a dashed node outline; an active node stays `--scv-active` underneath it |
+| sendable now | `--scv-enabled` — on the edge, on its label, and on the event button alike |
+| refused by a guard | `--scv-blocked`, dashed |
+| something is broken | `--scv-error`, which paints nothing else |
+
+`--scv-panel` defaults to the field colour: a 2% plate under an already-titled section separates nothing the title
+and the spacing do not. The two scrolling readouts (`[data-scv-log]`, `[data-scv-context]`) keep a hairline frame,
+because a list that clips has to clip against something. Set `--scv-panel` if you want every section to read as a
+plate.
 
 Two layout variables sit outside `THEME_TOKENS`: `--scv-min-height` (default `480px`, the component's minimum) and
 `--scv-diagram-min-height` (`420px`, the diagram panel's). A host short on vertical space sets both to `0` so the
 component never outgrows its container. The side column is a fixed `320px` grid track and does not reflow.
 
 `unstyled` on `Root` drops the built-in stylesheet — `BASE_CSS` is exported as a starting point — and leaves the
-host to style the `scv-*` classes and `data-scv-*` attributes. The diagram's own interactivity rules (cursors, highlight
-outlines) are injected either way: they are scoped to the id of that particular SVG and read the same tokens with
-fallback values, so highlighting stays legible with no host styles at all. The inside of the SVG — Mermaid's own
-theme — is configured through Mermaid by the host, not through these tokens.
+host to style the `scv-*` classes and `data-scv-*` attributes. The diagram rules are injected either way: they are
+scoped to the id of that particular SVG and read the same tokens with fallback values, so the diagram stays readable
+with no host styles at all.
+
+Those rules reach *inside* the SVG. Mermaid fills every state with the same lavender, which leaves the running state
+as one chip among N identical ones, so `diagramCss` repaints the inert topology onto `--scv-bg` and
+`--scv-border-strong` first — the active state is then the only filled node in the field. `mermaid.initialize` is
+still never called; the overrides are plain CSS scoped by the SVG id, at a specificity above Mermaid's own.
+
+What is deliberately left to Mermaid: the graph geometry, the edge strokes and their arrowheads (all edges share one
+marker definition, so a recoloured edge would keep a foreign arrowhead), and the label font — the node boxes were
+measured with it at render time, and restyling it afterwards overflows them. A host that wants another face sets
+`fontFamily` through `mermaid.initialize`, which is also where the rest of Mermaid's theme still belongs.
 
 Each mounted component injects its own copy of the stylesheet into its root element. There is no deduplication across
 instances.
