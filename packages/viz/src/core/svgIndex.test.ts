@@ -5,6 +5,7 @@ import {
     ACTIVE_CLASS,
     annotateSvg,
     applyHighlight,
+    BLOCKED_CLASS,
     ENABLED_CLASS,
     mermaidIdFromDomId,
     resolveClickTarget,
@@ -114,19 +115,33 @@ describe("applyHighlight", () => {
         const edge1 = svg.querySelector("#scv-1-edge1")!;
         const label1 = svg.querySelector('g.edgeLabel:has(g.label[data-id="edge1"])')!;
 
-        applyHighlight(svg, { activeIds: new Set(["off"]), selectedId: "working", enabledEdges: new Set([1]) });
+        applyHighlight(svg, {
+            activeIds: new Set(["off"]),
+            selectedId: "working",
+            edgeStatuses: new Map([[1, "enabled"]]),
+        });
         expect(off.classList.contains(ACTIVE_CLASS)).toBe(true);
         expect(working.classList.contains(ACTIVE_CLASS)).toBe(false);
         expect(working.classList.contains(SELECTED_CLASS)).toBe(true);
         expect(edge1.classList.contains(ENABLED_CLASS)).toBe(true);
         expect(label1.classList.contains(ENABLED_CLASS)).toBe(true);
 
-        applyHighlight(svg, { activeIds: new Set(["working", "green"]), selectedId: null, enabledEdges: new Set() });
+        applyHighlight(svg, {
+            activeIds: new Set(["working", "green"]),
+            selectedId: null,
+            edgeStatuses: new Map([[1, "blocked"]]),
+        });
         expect(off.classList.contains(ACTIVE_CLASS)).toBe(false);
         expect(working.classList.contains(ACTIVE_CLASS)).toBe(true);
         expect(working.classList.contains(SELECTED_CLASS)).toBe(false);
         expect(edge1.classList.contains(ENABLED_CLASS)).toBe(false);
+        expect(edge1.classList.contains(BLOCKED_CLASS)).toBe(true);
         expect(label1.classList.contains(ENABLED_CLASS)).toBe(false);
+        expect(label1.classList.contains(BLOCKED_CLASS)).toBe(true);
+
+        applyHighlight(svg, { activeIds: new Set(), selectedId: null, edgeStatuses: new Map() });
+        expect(edge1.classList.contains(BLOCKED_CLASS)).toBe(false);
+        expect(label1.classList.contains(BLOCKED_CLASS)).toBe(false);
     });
 });
 

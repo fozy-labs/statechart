@@ -105,6 +105,25 @@ export function collectOutgoingEvents(config: MachineConfigLike, mermaidId: stri
 }
 
 /**
+ * Guard names a refused event may have failed: the guards of every transition
+ * the active states (and their ancestors) define for the event, deduped in
+ * encounter order. Empty when none of the candidates carries a guard — the
+ * refusal then has no nameable cause in the config.
+ */
+export function collectGuardsForEvent(config: MachineConfigLike, activeIds: Iterable<string>, event: string): string[] {
+    const guards = new Set<string>();
+    for (const id of activeIds) {
+        for (const outgoing of collectOutgoingEvents(config, id)) {
+            if (outgoing.event !== event) continue;
+            for (const transition of outgoing.transitions) {
+                if (transition.guard !== undefined) guards.add(transition.guard);
+            }
+        }
+    }
+    return [...guards];
+}
+
+/**
  * Display form of a transition target: `working`, `#trafficLight.working.$final`
  * → `working.$final`, several targets joined with `, `, targetless → `(internal)`.
  */

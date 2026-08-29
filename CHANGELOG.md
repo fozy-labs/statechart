@@ -6,6 +6,25 @@
 
 ## [Unreleased]
 
+### Added
+- **viz** — compound-компоненты и headless API: `StatechartViz.Root` + части (`Header`, `Body`, `Diagram`,
+  `Side`, `Notice`, `Events`, `PayloadEditor`, `Log`, `Context`), хук `useStatechartViz()` (`StatechartVizApi`)
+  для своих панелей; `Root` принимает `className` / `style` / `unstyled` / `children`. Монолитный
+  `<StatechartViz />` — тот же `Root` с layout'ом по умолчанию, API не менялся.
+- **viz** — статус **blocked** у переходов: ребро с событием из активного состояния, которое машина отклоняет
+  (гвард), рисуется янтарным пунктиром (`scv-blocked`), клик пишет отказ в лог с именами гвардов
+  (`collectGuardsForEvent`) и мигает ребром (`scv-denied`); кнопка события показывает имя гварда (`⊘ hasKey`).
+  Невалидный payload больше не гасит рёбра «молча» — они inert, причина показана у поля.
+- **viz** — редактор payload в двух режимах с переключателем: **Fields** (по умолчанию; строки ключ/значение,
+  значение — JSON или строка) и **JSON**; переключение конвертирует значение без потерь.
+- **viz** — темизация: все цвета — CSS-токены `--scv-*` (12 штук, экспорт `THEME_TOKENS`), включая фоны и
+  рамки панелей; `unstyled` отключает встроенный стиль (`BASE_CSS` экспортируется).
+- **viz** — фикстура `door` (гвард, отклоняющий в начальном контексте) в playground и e2e.
+
+### Changed
+- **viz** — лог: отказ рендерится как `⊘ ~~EVENT~~ [guard] from`; `LogEntry` получил `reason?`.
+  `HighlightState.enabledEdges` заменён на `edgeStatuses` (`applyHighlight` из публичного API).
+
 ## [0.2.0] - 2026-08-29
 
 ### Added

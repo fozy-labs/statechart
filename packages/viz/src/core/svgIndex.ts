@@ -1,3 +1,4 @@
+import type { EdgeStatusMap } from "./edgeStatus";
 import type { DiagramIndex } from "./mermaidGraph";
 
 /**
@@ -14,6 +15,9 @@ export const EVENT_ATTR = "data-scv-event";
 export const ACTIVE_CLASS = "scv-active";
 export const SELECTED_CLASS = "scv-selected";
 export const ENABLED_CLASS = "scv-enabled";
+export const BLOCKED_CLASS = "scv-blocked";
+/** Transient class of the refusal flash on a clicked blocked edge. */
+export const DENIED_CLASS = "scv-denied";
 
 const NODE_SELECTOR = "g.node";
 const CLUSTER_SELECTOR = "g.statediagram-cluster";
@@ -61,7 +65,7 @@ export function annotateSvg(svg: SVGSVGElement, svgId: string, index: DiagramInd
 export type HighlightState = {
     activeIds: ReadonlySet<string>;
     selectedId: string | null;
-    enabledEdges: ReadonlySet<number>;
+    edgeStatuses: EdgeStatusMap;
 };
 
 /** Toggles the highlight classes in place; cheap enough to run on every snapshot. */
@@ -72,8 +76,33 @@ export function applyHighlight(svg: SVGSVGElement, state: HighlightState): void 
         element.classList.toggle(SELECTED_CLASS, id === state.selectedId);
     }
     for (const element of svg.querySelectorAll<SVGElement>(`[${EDGE_ATTR}]`)) {
-        const index = Number(element.getAttribute(EDGE_ATTR));
-        element.classList.toggle(ENABLED_CLASS, state.enabledEdges.has(index));
+        const status = state.edgeStatuses.get(Number(element.getAttribute(EDGE_ATTR)));
+        element.classList.toggle(ENABLED_CLASS, status === "enabled");
+        element.classList.toggle(BLOCKED_CLASS, status === "blocked");
+    }
+}
+
+/** How long `flashDeniedEdge` keeps the class on; the CSS animation must fit inside. */
+export const DENIED_FLASH_MS = 700;
+
+const deniedTimers = new WeakMap<SVGElement, ReturnType<typeof setTimeout>>();
+
+/** Plays the refusal flash on every element of the edge; a repeated click restarts it. */
+export function flashDeniedEdge(svg: SVGSVGElement, index: number): void {
+    for (const element of svg.querySelectorAll<SVGElement>(`[${EDGE_ATTR}="${index}"]`)) {
+        const pending = deniedTimers.get(element);
+        if (pending !== undefined) clearTimeout(pending);
+        element.classList.remove(DENIED_CLASS);
+        // A reflow between remove and add restarts the CSS animation.
+        void element.getBoundingClientRect();
+        element.classList.add(DENIED_CLASS);
+        deniedTimers.set(
+            element,
+            setTimeout(() => {
+                element.classList.remove(DENIED_CLASS);
+                deniedTimers.delete(element);
+            }, DENIED_FLASH_MS),
+        );
     }
 }
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { MachineConfigLike } from "../types";
 
 import {
+    collectGuardsForEvent,
     collectOutgoingEvents,
     describeTarget,
     findStateChain,
@@ -162,5 +163,33 @@ describe("describeTarget", () => {
         expect(describeTarget("#trafficLight.working.$final", "trafficLight")).toBe("working.$final");
         expect(describeTarget(["#p.$0.a", "#p.$1.c"], "p")).toBe("$0.a, $1.c");
         expect(describeTarget(undefined, "trafficLight")).toBe("(internal)");
+    });
+});
+
+describe("collectGuardsForEvent", () => {
+    it("names the guards of every candidate the active states define for the event", () => {
+        expect(collectGuardsForEvent(trafficLight, ["off"], "POWER_ON")).toEqual(["hasPower"]);
+        // The event exists but no candidate carries a guard.
+        expect(collectGuardsForEvent(trafficLight, ["broken"], "RESET")).toEqual([]);
+        // Unknown event, unknown state.
+        expect(collectGuardsForEvent(trafficLight, ["off"], "NOPE")).toEqual([]);
+        expect(collectGuardsForEvent(trafficLight, ["nope"], "POWER_ON")).toEqual([]);
+    });
+
+    it("dedupes across active parents and children", () => {
+        const config: MachineConfigLike = {
+            id: "m",
+            initial: "p",
+            states: {
+                p: {
+                    initial: "child",
+                    on: { GO: { target: "q", guard: "outer" } },
+                    states: { child: { on: { GO: [{ target: "p", guard: "inner" }, undefined] } } },
+                },
+                q: {},
+            },
+        };
+        // Encounter order: active ids come parents-first (`collectActivePaths`).
+        expect(collectGuardsForEvent(config, ["p", "child"], "GO")).toEqual(["outer", "inner"]);
     });
 });

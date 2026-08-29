@@ -9,6 +9,8 @@ mermaid (`stateDiagram-v2`): подсветка активных состоян�
 ## Содержание
 
 - [Пропсы](#пропсы)
+- [Compound-компоненты и headless API](#compound-компоненты-и-headless-api)
+- [Темизация](#темизация)
 - [Режимы](#режимы)
 - [Режим source](#режим-source)
 - [Правило eval / CSP](#правило-eval--csp)
@@ -28,6 +30,14 @@ type StatechartVizProps =
           title?: string;
           onMachine?: (machine: DisposableVizMachine | null) => void;
       };
+
+// StatechartViz.Root принимает дополнительно:
+type StatechartVizRootProps = StatechartVizProps & {
+    className?: string;
+    style?: CSSProperties;
+    unstyled?: boolean; // не инжектить встроенный стиль — см. «Темизация»
+    children?: ReactNode; // свой layout из частей; без children — layout по умолчанию
+};
 ```
 
 `VizMachine` — структурное подмножество `MachineStateSignal` библиотеки; `MachineSignal.state(definition)`
@@ -54,6 +64,67 @@ interface VizMachine<TContext = unknown, TEvent extends { type: string } = { typ
 `title` — заголовок панели; по умолчанию `definition.id`. `onMachine` (только режим `source`) получает созданную
 машину и `null`, когда она удалена (смена текста, размонтирование).
 
+## Compound-компоненты и headless API
+
+`<StatechartViz {...props} />` — готовый layout целиком. Для встраивания в свой интерфейс тот же компонент
+раскладывается на части поверх общего провайдера:
+
+```tsx
+<StatechartViz.Root machine={machine$}>
+    <StatechartViz.Header />
+    <StatechartViz.Body>
+        <StatechartViz.Diagram />
+        <StatechartViz.Side>
+            <StatechartViz.Notice />
+            <StatechartViz.Events />
+            <MyInspector /> {/* своя панель на useStatechartViz() */}
+        </StatechartViz.Side>
+    </StatechartViz.Body>
+</StatechartViz.Root>
+```
+
+| Часть           | Что рендерит                                                    |
+|-----------------|------------------------------------------------------------------|
+| `Root`          | провайдер + рамка `.scv`; без `children` — layout по умолчанию   |
+| `Header`        | заголовок, статус машины, текущий `value`                        |
+| `Body` / `Side` | layout-слоты: грид «диаграмма + колонка» и скроллящаяся колонка  |
+| `Diagram`       | интерактивная диаграмма (pan/zoom, клики)                        |
+| `Notice`        | ошибка режима `source`; без ошибки не рендерится                 |
+| `Events`        | события выбранного состояния + `PayloadEditor`                   |
+| `PayloadEditor` | редактор payload отдельно (внутри `Events` уже есть)             |
+| `Log`           | лог отправок                                                     |
+| `Context`       | текущий `context`                                                |
+
+Каждая часть принимает `className`. Части — тонкие обёртки над headless-хуком `useStatechartViz()`
+(тип `StatechartVizApi`, работает под `Root`): снапшот, `activeIds`, `edgeStatuses`, выбор состояния,
+`outgoing`, `canSend`/`send` (с логированием), лог, состояние payload-редактора. Любую боковую панель
+можно заменить своей, не теряя остального.
+
+## Темизация
+
+Все цвета — CSS-переменные на `.scv`; хосту достаточно переопределить их (тёмная тема — тоже):
+
+| Токен                 | По умолчанию | Что красит                                        |
+|-----------------------|--------------|----------------------------------------------------|
+| `--scv-bg`            | `#fff`       | поле диаграммы, инпуты, кнопки                     |
+| `--scv-panel`         | `#fafafa`    | фон боковых панелей                                |
+| `--scv-text`          | `#222`       | основной текст                                     |
+| `--scv-muted`         | `#7a7a7a`    | вторичный текст, заголовки панелей                 |
+| `--scv-border`        | `#d9d9d9`    | рамки панелей и диаграммы                          |
+| `--scv-border-strong` | `#b5b5b5`    | рамки интерактивных контролов                      |
+| `--scv-active`        | `#d0342c`    | обводка активного состояния                        |
+| `--scv-active-fill`   | `#fff0ee`    | заливка активного состояния                        |
+| `--scv-selected`      | `#1a6ee0`    | обводка выбранного состояния                       |
+| `--scv-enabled`       | `#1f8a3b`    | разрешённые переходы и кнопки                      |
+| `--scv-blocked`       | `#b45309`    | переходы, отклонённые гвардом, и подписи гвардов   |
+| `--scv-error`         | `#b00020`    | текст ошибок                                       |
+
+Таблица экспортируется как `THEME_TOKENS`. `unstyled` на `Root` отключает встроенный стиль целиком —
+хост стилизует классы `scv-*` и атрибуты `data-scv-*` сам (`BASE_CSS` экспортируется как отправная
+точка); правила интерактивности диаграммы (курсоры, обводки подсветки) инжектятся всегда — они
+привязаны к id конкретного SVG и читают те же токены с fallback-значениями. Внутренность SVG
+(тема mermaid) настраивается конфигурацией mermaid у хоста, не токенами.
+
 ## Режимы
 
 | Режим     | Что рендерится                                  | Откуда код guards/actions                          |
@@ -66,11 +137,17 @@ interface VizMachine<TContext = unknown, TEvent extends { type: string } = { typ
 - активные состояния подсвечены; `value` проецируется на плоские mermaid-id (`{ working: "green" }` →
   `working`, `green`); ключи регионов `$0`/`$1` пропускаются, `$final` отображается на узел `[*]` по таблице в
   [docs/svg-scheme.md](docs/svg-scheme.md#start-and-end-pseudo-states);
-- клик по переходу (ребро или подпись) отправляет событие, если оно сейчас разрешено (`can`) и исходное
-  состояние ребра активно; разрешённые рёбра выделены;
-- клик по состоянию выделяет его и показывает кнопки исходящих событий (включая события предков);
-  поле payload — JSON-объект, который подмешивается в событие (`{ "value": 12 }` → `{ type: "SQUARE", value: 12 }`);
-- панели: диаграмма (pan/zoom), лог событий, `context`;
+- ребро с событием из активного состояния — в одном из трёх статусов: **enabled** (машина примет событие;
+  зелёное, клик отправляет), **blocked** (машина отклоняет — обычно гвард; янтарный пунктир, клик пишет отказ
+  в лог с именами гвардов и мигает ребром), **inert** (всё остальное, включая невалидный payload — его причина
+  показана у поля, а не на диаграмме);
+- клик по состоянию выделяет его и показывает кнопки исходящих событий (включая события предков); кнопка,
+  отклонённая гвардом при активном состоянии, показывает его имя (`⊘ hasKey`) вместо простого затемнения;
+- payload подмешивается в событие (`{ "value": 12 }` → `{ type: "SQUARE", value: 12 }`); редактор — в двух
+  режимах с переключателем: **Fields** (по умолчанию; строки ключ/значение, значение — JSON, а не разобравшийся
+  текст остаётся строкой) и **JSON** (сырой объект). Переключение конвертирует значение; невалидный JSON
+  блокирует уход в Fields, но не теряется;
+- панели: диаграмма (pan/zoom), лог событий (отказы — с именем гварда), `context`;
 - телепорта (перезапуск машины из выбранного состояния по клику с модификатором) нет: у библиотеки нет API
   запуска машины из заданного `value`.
 
@@ -125,11 +202,12 @@ Markdown вместо `.mmd`: если в тексте есть ```` ```mermaid 
 - Диаграмма рендерится один раз (`mermaid.render`, `mermaid` — peer-зависимость, грузится `import()` по
   требованию); узлы и рёбра SVG размечаются атрибутами `data-scv-state` / `data-scv-edge` по схеме из
   [docs/svg-scheme.md](docs/svg-scheme.md); на каждый snapshot переключаются классы `scv-active`,
-  `scv-selected`, `scv-enabled` без перерендера.
+  `scv-selected`, `scv-enabled`, `scv-blocked` без перерендера (`scv-denied` — одноразовое мигание по клику
+  на заблокированное ребро).
 - `mermaid.initialize` компонент не вызывает — конфигурация mermaid остаётся за хостом; `securityLevel: "sandbox"`
   не поддерживается (SVG уезжает в iframe).
 - Внутреннее состояние — на сигналах rx-toolkit (`Signal.state`), подписка через `useSignal`.
-- Цвета настраиваются CSS-переменными `--scv-active`, `--scv-active-fill`, `--scv-selected`, `--scv-enabled`.
+- Цвета — токены из раздела [Темизация](#темизация).
 
 ## Ограничения
 
@@ -144,7 +222,7 @@ Markdown вместо `.mmd`: если в тексте есть ```` ```mermaid 
 ```bash
 npm install            # в корне репозитория; затем npm run build -w packages/converter: конвертер подключён
                        # workspace-ссылкой и читается из его dist/ (типы, unit-тесты, dev-сервер, сборка)
-npm run dev            # playground: /?fixture=trafficLight|square|parallel[&mode=source[&source=<текст>][&machine=<id>]], спайк: /spike/
+npm run dev            # playground: /?fixture=trafficLight|square|parallel|door[&mode=source[&source=<текст>][&machine=<id>]], спайк: /spike/
 npm run ts-check       # против dist/ конвертера и установленного @fozy-labs/rx-toolkit
 npm run test           # vitest (jsdom): core, playground (реальный конвейер), testing, type-тест VizMachine,
                        # файловые снапшоты src/__tests__/proposal/*.generated.ts — вывод конвертера (обновить: vitest -u)
@@ -155,5 +233,5 @@ npm run check:all      # из корня репозитория npm run check:al
 ```
 
 Playground в режиме `source` гоняет реальный конвейер по тексту фикстуры (`src/testing/fixtures/*` — примеры
-`square` и `trafficLight` из пропозала дословно) или по `?source=`; текст можно править в поле под диаграммой.
+`square` и `trafficLight` из пропозала дословно; `door` — гвард, отклоняющий в начальном контексте) или по `?source=`; текст можно править в поле под диаграммой.
 `window.__scvPlayground.machine` — запущенная машина (фейк или из `source`).

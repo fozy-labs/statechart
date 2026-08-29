@@ -31,6 +31,7 @@ function markdown(...diagrams: string[]): string {
 }
 
 const edgeLabel = (page: Page, event: string) => page.locator(`g.edgeLabel[data-scv-event="${event}"]`);
+const payloadMode = (page: Page, mode: "form" | "json") => page.locator(`[data-scv-mode="${mode}"]`).click();
 const edgePath = (page: Page, event: string) => page.locator(`path.transition[data-scv-event="${event}"]`);
 const logEntries = (page: Page) => page.locator("[data-scv-log] li");
 const eventButton = (page: Page, event: string) => page.locator(`[data-scv-events] button[data-scv-event="${event}"]`);
@@ -155,6 +156,7 @@ test.describe("state selection and event panel", () => {
     test("the JSON payload is merged into the event; invalid JSON disables sending", async ({ page }) => {
         await open(page, "square");
         await page.locator('[data-scv-state="idle"]').click();
+        await payloadMode(page, "json");
         const payload = page.locator("[data-scv-payload]");
 
         await payload.fill("{ not json");
@@ -170,6 +172,81 @@ test.describe("state selection and event panel", () => {
     });
 });
 
+test.describe("guard-blocked transitions", () => {
+    test("a blocked edge is marked, a click logs the refusal with the guard", async ({ page }) => {
+        await open(page, "door");
+        const label = edgeLabel(page, "OPEN");
+        await expect(label).toHaveClass(/scv-blocked/);
+        await expect(label).not.toHaveClass(/scv-enabled/);
+        await expect(edgePath(page, "OPEN")).toHaveClass(/scv-blocked/);
+
+        await label.locator("span.edgeLabel").dispatchEvent("click");
+        await expect(logEntries(page)).toHaveCount(1);
+        await expect(logEntries(page).first()).toContainText("⊘");
+        await expect(logEntries(page).first()).toContainText("OPEN [hasKey] locked");
+        expect(await activeStates(page)).toEqual(["locked"]);
+
+        // PICK_KEY hands over the key; the same edge turns enabled and fires.
+        // dispatchEvent: mermaid overlaps the small diagram's labels, a real click is intercepted.
+        await edgeLabel(page, "PICK_KEY").locator("span.edgeLabel").dispatchEvent("click");
+        await expect(label).toHaveClass(/scv-enabled/);
+        await expect(label).not.toHaveClass(/scv-blocked/);
+        await label.locator("span.edgeLabel").dispatchEvent("click");
+        await expect.poll(() => activeStates(page)).toEqual(["open"]);
+    });
+
+    test("the events panel names the blocking guard on the button", async ({ page }) => {
+        await open(page, "door");
+        await page.locator('[data-scv-state="locked"]').click();
+        const button = eventButton(page, "OPEN");
+        await expect(button).toBeDisabled();
+        await expect(button).toContainText("⊘ hasKey");
+        await expect(button).toHaveClass(/scv-event-blocked/);
+        // An ordinary disabled button (inactive source) has no guard mark.
+        await eventButton(page, "PICK_KEY").click();
+        await expect(button).toBeEnabled();
+    });
+
+    test("source mode compiles the guard and blocks the same way", async ({ page }) => {
+        await open(page, "door", "source");
+        await expect(page.locator("[data-scv-status]")).toHaveText("active");
+        const label = edgeLabel(page, "OPEN");
+        await expect(label).toHaveClass(/scv-blocked/);
+        await edgeLabel(page, "PICK_KEY").locator("span.edgeLabel").dispatchEvent("click");
+        await expect(label).toHaveClass(/scv-enabled/);
+        await label.locator("span.edgeLabel").dispatchEvent("click");
+        await expect.poll(() => activeStates(page)).toEqual(["open"]);
+    });
+});
+
+test.describe("payload form mode", () => {
+    test("key/value fields build the payload; a JSON value parses, bare text stays a string", async ({ page }) => {
+        await open(page, "square");
+        await page.locator('[data-scv-state="idle"]').click();
+        await page.locator("[data-scv-field-key]").fill("value");
+        await page.locator("[data-scv-field-value]").fill("12");
+        await eventButton(page, "SQUARE").click();
+        await expect.poll(() => activeStates(page)).toEqual(["done"]);
+        await expect(page.locator("[data-scv-context]")).toContainText('"result": 144');
+        await expect(logEntries(page).first()).toContainText('SQUARE {"value":12} idle → done');
+    });
+
+    test("rows can be added and removed; the values follow into JSON mode", async ({ page }) => {
+        await open(page, "square");
+        await page.locator("[data-scv-field-key]").fill("value");
+        await page.locator("[data-scv-field-value]").fill("12");
+        await page.locator("[data-scv-field-add]").click();
+        await page.locator("[data-scv-field-key]").nth(1).fill("note");
+        await page.locator("[data-scv-field-value]").nth(1).fill("plain text");
+        await payloadMode(page, "json");
+        await expect(page.locator("[data-scv-payload]")).toHaveValue('{ "value": 12, "note": "plain text" }');
+        await payloadMode(page, "form");
+        await page.locator("[data-scv-field-remove]").nth(1).click();
+        await payloadMode(page, "json");
+        await expect(page.locator("[data-scv-payload]")).toHaveValue('{ "value": 12 }');
+    });
+});
+
 test.describe("source mode", () => {
     const status = (page: Page) => page.locator("[data-scv-status]");
     const context = (page: Page) => page.locator("[data-scv-context]");
@@ -180,6 +257,7 @@ test.describe("source mode", () => {
         expect(await activeStates(page)).toEqual(["idle"]);
 
         await page.locator('[data-scv-state="idle"]').click();
+        await payloadMode(page, "json");
         await page.locator("[data-scv-payload]").fill('{ "value": 12 }');
         await eventButton(page, "SQUARE").click();
         await expect.poll(() => activeStates(page)).toEqual(["done"]);

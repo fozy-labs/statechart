@@ -1,4 +1,18 @@
-export { StatechartViz, parsePayload, type LogEntry } from "./StatechartViz";
+export { StatechartViz, type StatechartVizRootProps } from "./StatechartViz";
+export { useStatechartViz, type PayloadApi, type StatechartVizApi } from "./viz/context";
+export { type LogEntry } from "./viz/log";
+export {
+    buildRowsPayload,
+    parsePayload,
+    parseRowValue,
+    type PayloadMode,
+    type PayloadResult,
+    type PayloadRow,
+    type PayloadState,
+} from "./viz/payload";
+export { type DiagramState } from "./viz/useDiagram";
+export { computeEdgeStatuses, type EdgeInteractivity, type EdgeStatusMap } from "./core/edgeStatus";
+export { BASE_CSS, diagramCss, THEME_TOKENS } from "./styles";
 export type {
     ActionLike,
     ActionsLike,
@@ -19,6 +33,7 @@ export type {
 } from "./types";
 
 export {
+    collectGuardsForEvent,
     collectOutgoingEvents,
     describeTarget,
     findStateChain,
