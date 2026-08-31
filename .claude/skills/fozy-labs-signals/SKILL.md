@@ -5,13 +5,13 @@ description: >
   LocalSignal, RxJS interop and the useSignal React hook.
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
-astp-hash: 531221f79239a1129911a8fb23a0aa562ab0036db889b889b72b0aa56889f3db
+astp-version: 1.4.0
+astp-hash: 7844314ec0a2f479f7fd29f4a0784eed27af3c4a11f26a9780c88ad0d039fe8d
 ---
 
 # @fozy-labs/rx-toolkit — Signals
 
-Value-based reactive primitives (SolidJS / Angular Signals in spirit), built on RxJS. Reference version: **0.11.2**.
+Value-based reactive primitives (SolidJS / Angular Signals in spirit), built on RxJS. Reference version: **0.12.0**.
 Use for **local synchronous state** — server state goes through `createResource` (see `fozy-labs-rx-api`).
 
 Two layers:
@@ -188,15 +188,16 @@ if (import.meta.env.DEV) {
 
 Load these only when the specific situation applies — do **not** preload.
 
-| Situation                                                                          | File                                 |
-|------------------------------------------------------------------------------------|--------------------------------------|
-| Rendering signals in React — `useSignal`, component-local signals, StrictMode, SSR | [references/use-in-react.md](references/use-in-react.md)         |
-| Signals outside React — Node, workers, tests, Angular/Svelte/Solid, class style    | [references/use-outside-react.md](references/use-outside-react.md)    |
-| A compute/effect runs too often, too rarely, or out of order; `Batcher`            | [references/extra-recomputes.md](references/extra-recomputes.md)     |
-| Deciding what must be disposed, effect teardown, leaks, DI scope interaction       | [references/disposal-and-leaks.md](references/disposal-and-leaks.md)   |
-| An RxJS `Observable` on either side — `obs`, `Signal.from`, `keepAlive`, `SourceSignal`         | [references/rxjs-interop.md](references/rxjs-interop.md)         |
-| State that must survive a reload — `LocalSignal`, storage layout, GC, drivers      | [references/persisted-state.md](references/persisted-state.md)      |
-| One big object or a keyed collection wakes every reader (experimental APIs)        | [references/fine-grained-state.md](references/fine-grained-state.md)   |
-| Existing code uses a name this skill does not describe (`signalize`, `LocalState`) | [references/migrations.md](references/migrations.md)           |
+| Situation                                                                               | File                                                                 |
+|-----------------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| Rendering signals in React — `useSignal`, component-local signals, StrictMode, SSR      | [references/use-in-react.md](references/use-in-react.md)             |
+| Signals outside React — Node, workers, tests, Angular/Svelte/Solid, class style         | [references/use-outside-react.md](references/use-outside-react.md)   |
+| A compute/effect runs too often, too rarely, or out of order; `Batcher`                 | [references/extra-recomputes.md](references/extra-recomputes.md)     |
+| Deciding what must be disposed, effect teardown, leaks, DI scope interaction            | [references/disposal-and-leaks.md](references/disposal-and-leaks.md) |
+| An RxJS `Observable` on either side — `obs`, `Signal.from`, `keepAlive`, `SourceSignal` | [references/rxjs-interop.md](references/rxjs-interop.md)             |
+| State that must survive a reload — `LocalSignal`, storage layout, GC, drivers           | [references/persisted-state.md](references/persisted-state.md)       |
+| One big object or a keyed collection wakes every reader (experimental APIs)             | [references/fine-grained-state.md](references/fine-grained-state.md) |
+| Modelling a lifecycle, not a value — state machines (`unstable_MachineSignal.state`)    | [references/statechart.md](references/statechart.md)                 |
+| Existing code uses a name this skill does not describe (`signalize`, `LocalState`)      | [references/migrations.md](references/migrations.md)                 |
 
 Pick **one** of `use-in-react.md` / `use-outside-react.md` — the one matching the host. Loading both variants of the same topic is redundant.

@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 414d4ca019b3c1b37f72cfe151f41dfe70fe85d735f2b05b27d27aae12c2df0b
 ---
 # Signals outside React

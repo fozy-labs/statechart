@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: f45a1983de754977eb56966693df1399342c9883e6c585a0b77f90fe354be6f5
 ---
 # Reading — React hooks

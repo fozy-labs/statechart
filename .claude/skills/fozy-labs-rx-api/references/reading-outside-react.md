@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 697cee7aba78745935a9798fb652da487b25d6d7cdedce333c21cc9b12344eef
 ---
 # Reading — outside React

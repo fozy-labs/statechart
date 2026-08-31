@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: fe6b6987437c70c467ff51e90e3e13795d9295539c41bb26ce180c81627caa8f
 ---
 # Scopes — React binding

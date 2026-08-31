@@ -5,7 +5,7 @@ description: >
   frontend code belongs to, plus the fozy-labs conventions.
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: bffc8e018d54a345089cf05781472e525f8afb37913a94f7de011d976054858d
 ---
 

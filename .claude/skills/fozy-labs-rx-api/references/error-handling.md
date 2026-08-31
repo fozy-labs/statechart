@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: ad08976e582eb8c90c1864f7b49775b14744545daec019cc21f806fe14070160
 ---
 # Errors, retries and cancellation

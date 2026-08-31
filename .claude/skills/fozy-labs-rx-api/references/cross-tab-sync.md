@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 71e400493a3ca11ad731a89a2d040ddb364a7e58c5045110185e38b6375c0156
 ---
 # Cross-tab sync

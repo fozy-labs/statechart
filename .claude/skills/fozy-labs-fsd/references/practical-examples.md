@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 0dc49bbadfa43fbc5685f0e9812523935955c092917c46606347bbd67755c992
 ---
 # Practical examples

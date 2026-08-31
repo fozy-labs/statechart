@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 854560310e5cb5fd343b3fddcdab2d20fa8ddc8d160c8be7dd5d863ef36e3a32
 ---
 # Layer structure

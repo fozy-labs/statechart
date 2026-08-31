@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 0beab56eaaafb69c628f6fd573e78b741e3dd9a76c2a611bf357feb89723fbbd
 ---
 # Segments and naming

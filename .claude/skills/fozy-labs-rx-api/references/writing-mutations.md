@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 4cf567b52acd71fd2076365b64c3609ded35d9848ca993c2f9e876f514ada45c
 ---
 # Writing mutations — `createCommand`

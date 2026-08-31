@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 9c6ad0647d84f9bd09352d4ae1ba0df6ef0a4121f316006802f5d9415d6823bd
 ---
 # State that survives a reload — `LocalSignal`

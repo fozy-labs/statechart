@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: e1529cd72aabd0c39722e0d5721672c6579135f3874d4d75f06cda66e0f219fe
 ---
 # Cache and invalidation

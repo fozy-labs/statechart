@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 43cdc8bd412b93490f7f971600c2e3dac2f2cf092bc20a2fc2a24087947dce71
 ---
 # RxJS interop

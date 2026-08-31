@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 6a6cd4f5bccf2c47a8bbb2e3d4ab31320734fa039dfd6fcff29b61617c3ec6b2
 ---
 # Fine-grained state — deep trees and keyed collections

@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: dff636ed0681815a34dc211786bc915fbf7e5ad9a0b0507f8c4cd6d221968d73
 ---
 # Disposal, teardown and leaks

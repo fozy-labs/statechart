@@ -1,8 +1,8 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
-astp-hash: 8ebf80bc96c7ad2da99f151f4f6a95fcf7de2905640600b674bf1c272249ec2a
+astp-version: 1.4.0
+astp-hash: ada5baf6675d1a0ff4f172bb86bba3b06fd873f8fdfacb25ec3cc3a07ef192b2
 ---
 # Lifecycle hooks — `onCacheEntryAdded` / `onQueryStarted`
 
@@ -11,14 +11,15 @@ exists, and instrumenting every individual query run.
 
 Both are accepted at two levels — on `createApi(...)` (api-wide) and on `createResource` / `createCommand` (local).
 
-**Contents:** [`onCacheEntryAdded`](#oncacheentryadded--once-per-cache-entry) · [`onQueryStarted`](#onquerystarted--once-per-query-run) · [Both levels run](#both-levels-run) · [Polling and retry](#not-a-substitute-for-polling-or-retry)
+**Contents:** [`onCacheEntryAdded`](#oncacheentryadded--once-per-cache-entry) · [`onQueryStarted`](#onquerystarted--once-per-query-run) · [`composeHooks`](#composehooks--several-hooks-on-one-option) · [Both levels run](#both-levels-run) · [Polling and retry](#not-a-substitute-for-polling-or-retry)
 
 ---
 
 ## `onCacheEntryAdded` — once per cache entry
 
 Fires when an entry is created for a given set of args. Use it for anything whose lifetime should match the entry's:
-a websocket, an SSE stream, a polling timer.
+a polling timer, a socket that patches *around* the entry's own data. For plain live data a stream `queryFn`
+(an `Observable` — see [stream-queries.md](stream-queries.md)) replaces this plumbing entirely.
 
 On a **command** it fires once per run, not once per key: every `execute` completes the previous entry for that key and
 builds a new one.
@@ -69,9 +70,32 @@ Fires every time `queryFn` starts: the initial load, each refresh, each retry.
 |-------------------|----------------------------|--------------------------------------------------------------------------------------|
 | `entry`           | `IQueryCacheEntry`         | The entry the run belongs to.                                                        |
 | `$queryFulfilled` | `Promise<{ data: TData }>` | Resolves on success; rejects with the **raw** error (before `mapError`) or on abort. |
+| `$queryStream`    | `{ firstReceived, allReceived }` | Stream milestones; for a promise `queryFn` both equal `$queryFulfilled`. See [stream-queries.md](stream-queries.md). |
 
 Errors thrown inside either hook are suppressed and never affect the request. A rejected `$queryFulfilled` you never
 await is therefore harmless, but a resource you opened in the hook leaks unless you handle the rejection yourself.
+
+---
+
+## `composeHooks` — several hooks on one option
+
+`composeHooks(...hooks)` merges hooks of one kind into one, for stacking independent behaviours (logging, optimistic
+updates, metrics) on a single option:
+
+```ts
+import { composeHooks } from "@fozy-labs/rx-toolkit";
+
+getUser = api.createResource({
+  queryFn: (id: number): Promise<User> => fetchUser(id),
+  onQueryStarted: composeHooks(logQueryStarted, warmRelatedCaches),
+});
+```
+
+- `undefined` arguments are skipped; a single remaining hook is returned as-is, none — `undefined`.
+- All hooks **start simultaneously** (completion order not guaranteed) and each one's error is suppressed
+  independently. The api merges api-level and local hooks with this same utility.
+- Type-inference limit: with inline un-annotated hooks TS needs `TData` known up front — annotate the `queryFn`
+  return type, the hook's `ctx`, or pass the generics explicitly.
 
 ---
 

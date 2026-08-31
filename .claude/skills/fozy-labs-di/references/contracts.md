@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 61c29854c430afb07c173ae4f2209f31820fe592f38c99aafff933528ccc554b
 ---
 # Contracts — `inject.define`

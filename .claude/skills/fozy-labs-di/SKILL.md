@@ -4,7 +4,7 @@ description: >
   Dependency injection for js/ts projects based on @fozy-labs/simplest-di package.
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 6f1e28f48cb70fda220482f06b15f7199ced25164fa6f721e547f5f3aaa08a4f
 ---
 

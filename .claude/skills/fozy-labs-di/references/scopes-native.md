@@ -1,7 +1,7 @@
 ---
 astp-source: fozy-labs/astp
 astp-bundle: fozy-labs
-astp-version: 1.3.2
+astp-version: 1.4.0
 astp-hash: 150f14a571e4b35ff9f61a05e9e4939fb3d81bde9483fd6115c9da7b00684a86
 ---
 # Scopes — framework-agnostic (core)
