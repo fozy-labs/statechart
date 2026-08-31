@@ -30,10 +30,14 @@ Nothing else to touch. viz depends on the converter through `workspace:^`, which
 in the published manifest, and `pnpm-lock.yaml` records the workspace link rather than a version, so it needs no
 refresh.
 
-#### 3. Close the CHANGELOG section
+#### 3. Close the CHANGELOG section — final releases only
 
-Move everything under `[Unreleased]` into a new `## [X.Y.Z] - YYYY-MM-DD` heading, and update the reference links at
-the bottom of the file: `[Unreleased]` now compares `vX.Y.Z...HEAD`, and `[X.Y.Z]` points at the new tag.
+A prerelease leaves `[Unreleased]` open: the entries accumulate across every `X.Y.Z-rc.N` and close once, under the
+final version. Skip to the next step.
+
+For a final release, move everything under `[Unreleased]` into a new `## [X.Y.Z] - YYYY-MM-DD` heading, and update the
+reference links at the bottom of the file: `[Unreleased]` now compares `vX.Y.Z...HEAD`, and `[X.Y.Z]` points at the new
+tag.
 
 #### 4. Commit and tag
 
@@ -65,10 +69,13 @@ Check in the `--dry-run` output that `workspace:^` came out as `^X.Y.Z`. Publish
 
 #### 6. Create the GitHub release
 
-Notes are the CHANGELOG section for this version — either from a file, or by publishing a draft prepared earlier.
+Notes are the CHANGELOG section for this version — either from a file, or by publishing a draft prepared earlier. A
+prerelease has no section of its own, so its notes are the current `[Unreleased]` body, and it takes `--prerelease` to
+keep GitHub from marking it the latest release.
 
 ```sh
 gh release create vX.Y.Z --title vX.Y.Z --notes-file <file holding the CHANGELOG section>
+gh release create vX.Y.Z-rc.N --title vX.Y.Z-rc.N --notes-file <file holding [Unreleased]> --prerelease
 ```
 
 #### 7. Verify
@@ -81,7 +88,7 @@ pnpm view @fozy-labs/statechart-viz version
 Then install into an empty project and check that it resolves:
 
 ```sh
-npm install @fozy-labs/statechart-viz @fozy-labs/rx-toolkit@rc mermaid react react-dom rxjs
+npm install @fozy-labs/statechart-viz @fozy-labs/rx-toolkit mermaid react react-dom rxjs
 ```
 
 ## Rolling back
