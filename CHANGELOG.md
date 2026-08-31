@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-01
+
 ### Changed
 
 - **Breaking: converter, viz** — `@fozy-labs/rx-toolkit` `>=0.12.0` is now required, where the statechart API carries
@@ -83,7 +85,8 @@ First release, extracted from [fozy-labs/rx-toolkit](https://github.com/fozy-lab
   states highlighted, events sent by clicking a transition, an event log and the `context`. `source` compiles `.mmd`
   text in the browser, loading the converter and TypeScript on demand.
 
-[Unreleased]: https://github.com/fozy-labs/statechart/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/fozy-labs/statechart/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/fozy-labs/statechart/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fozy-labs/statechart/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fozy-labs/statechart/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/fozy-labs/statechart/releases/tag/v0.1.0
