@@ -1,12 +1,16 @@
 # Changelog
 
-The format follows [Keep a Changelog 2.0.0](https://keepachangelog.com/en/2.0.0/) and the versions follow
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-`@fozy-labs/statechart-converter` and `@fozy-labs/statechart-viz` are versioned together: one version for both, one
-`vX.Y.Z` tag, one section here. The procedure is in [RELEASING.md](RELEASING.md).
+> `@fozy-labs/statechart-converter` and `@fozy-labs/statechart-viz` are versioned together.
 
 ## [Unreleased]
+
+### Changed
+
+- **Breaking: converter, viz** — `@fozy-labs/rx-toolkit` `>=0.12.0` is now required, where the statechart API carries
+  the `unstable_` prefix: `createMachine` → `unstable_createMachine`, `MachineSignal` → `unstable_MachineSignal`,
+  `Statechart` → `unstable_Statechart`. Rename the imports in code that builds or types a machine by hand.
+- **converter** — The generated file imports `unstable_createMachine as createMachine` and still calls it
+  `createMachine`. A file regenerated after 0.3.0 differs on that import line and nowhere else.
 
 ## [0.3.0] - 2026-08-29
 

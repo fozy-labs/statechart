@@ -7,7 +7,7 @@
  * kept fresh by `proposal/generated.test.ts`) are referenced through
  * `typeof import(...)`, which is erased at runtime.
  */
-import { MachineSignal, Signal } from "@fozy-labs/rx-toolkit";
+import { unstable_MachineSignal as MachineSignal, Signal } from "@fozy-labs/rx-toolkit";
 import { describe, expect, it } from "vitest";
 
 import { StatechartViz } from "../StatechartViz";

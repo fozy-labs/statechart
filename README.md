@@ -23,11 +23,11 @@ Both packages ship under the `@fozy-labs` scope on one shared version — one gi
 flowchart LR
     SRC["square.mmd<br/>or a mermaid block in docs.md"]
     GEN["square.generated.ts<br/>Context, Events, StateId, source, definition"]
-    RT["MachineSignal<br/>@fozy-labs/rx-toolkit"]
+    RT["unstable_MachineSignal<br/>@fozy-labs/rx-toolkit"]
     VIZ["StatechartViz"]
 
     SRC -- "statechart-convert" --> GEN
-    GEN -- "MachineSignal.state(definition)" --> RT
+    GEN -- "unstable_MachineSignal.state(definition)" --> RT
     RT -- "machine mode" --> VIZ
     SRC -- "source mode, compiled in the browser" --> VIZ
 ```
@@ -64,7 +64,7 @@ npx statechart-convert square.mmd
 Run it, and watch it run:
 
 ```tsx
-import { MachineSignal } from "@fozy-labs/rx-toolkit";
+import { unstable_MachineSignal as MachineSignal } from "@fozy-labs/rx-toolkit";
 import { StatechartViz } from "@fozy-labs/statechart-viz";
 import { definition } from "./square.generated";
 
@@ -75,8 +75,9 @@ const square$ = MachineSignal.state(definition);
 
 The input language is documented in the [converter README](packages/converter/README.md); the component's props,
 modes and theming in the [viz README](packages/viz/README.md). The `createMachine` config format, `MachineSignal` and
-`toMermaid()` belong to the library:
-[rx-toolkit statechart docs](https://github.com/fozy-labs/rx-toolkit/blob/v0.12.0-rc.1/docs/statechart/README.md).
+`toMermaid()` belong to the library, where they are still experimental and exported as `unstable_createMachine` /
+`unstable_MachineSignal` — alias them on import, as above:
+[rx-toolkit statechart docs](https://github.com/fozy-labs/rx-toolkit/blob/v0.12.0/docs/statechart/README.md).
 
 ## Working in the repo
 

@@ -2,7 +2,7 @@
 
 exports[`square.mmd > emits the generated file 1`] = `
 "// AUTO-GENERATED from square.mmd — do not edit
-import { createMachine, mutate, type ActionArgs, type GuardArgs } from "@fozy-labs/rx-toolkit";
+import { unstable_createMachine as createMachine, mutate, type ActionArgs, type GuardArgs } from "@fozy-labs/rx-toolkit";
 
 export type Context = { result: number | null; error: string | null };
 
@@ -79,7 +79,7 @@ export const definition = createMachine<Context, Events>(
 
 exports[`trafficLight.mmd > emits the generated file 1`] = `
 "// AUTO-GENERATED from trafficLight.mmd — do not edit
-import { createMachine, mutate, type ActionArgs, type GuardArgs } from "@fozy-labs/rx-toolkit";
+import { unstable_createMachine as createMachine, mutate, type ActionArgs, type GuardArgs } from "@fozy-labs/rx-toolkit";
 
 export type Context = { power: boolean; retries: number };
 

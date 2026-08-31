@@ -23,7 +23,7 @@ stateDiagram-v2
 
 ```ts
 // AUTO-GENERATED from square.mmd — do not edit
-import { createMachine, mutate, type ActionArgs } from "@fozy-labs/rx-toolkit";
+import { unstable_createMachine as createMachine, mutate, type ActionArgs } from "@fozy-labs/rx-toolkit";
 
 export type Context = { result: number | null };
 
@@ -57,7 +57,7 @@ export const definition = createMachine<Context, Events>(
 ```
 
 The reverse direction is the library's `definition.toMermaid()`
-([docs](https://github.com/fozy-labs/rx-toolkit/blob/v0.12.0-rc.1/docs/statechart/README.md)): its output parses back
+([docs](https://github.com/fozy-labs/rx-toolkit/blob/v0.12.0/docs/statechart/README.md)): its output parses back
 into the same config, which the round-trip tests enforce.
 
 The parser is hand-written and line-based. Mermaid itself, pinned to 11.17.2, is a development dependency only — the
@@ -373,7 +373,9 @@ block belongs to the block.
 ## The generated file
 
 - Header `// AUTO-GENERATED from <label> — do not edit`, then an import of exactly the names used, in the fixed order
-  `createMachine, mutate, type ActionArgs, type GuardArgs, type MachineEvent`.
+  `createMachine, mutate, type ActionArgs, type GuardArgs, type MachineEvent`. The library still exports the factory as
+  experimental, so the first name is imported aliased: `unstable_createMachine as createMachine`. Everything below
+  spells it `createMachine`, the name the generated file binds.
 - `Context` is the `@context type` body verbatim. Without the context directives it is `{}`, with `context: {}`.
 - `Events` is the union of the events used in transition labels, in order of first appearance, or `never`.
 - `StateId` is the union of every state path in config order, regions included, `$final` excluded.

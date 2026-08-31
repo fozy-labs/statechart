@@ -45,13 +45,19 @@ describe("emit: header and imports", () => {
     });
 
     it("imports from @fozy-labs/rx-toolkit by default and from `importFrom` when given", () => {
-        expect(importLine(emit(parsed))).toBe('import { createMachine } from "@fozy-labs/rx-toolkit";');
-        expect(importLine(emit(parsed, { importFrom: "../lib" }))).toBe('import { createMachine } from "../lib";');
+        expect(importLine(emit(parsed))).toBe(
+            'import { unstable_createMachine as createMachine } from "@fozy-labs/rx-toolkit";',
+        );
+        expect(importLine(emit(parsed, { importFrom: "../lib" }))).toBe(
+            'import { unstable_createMachine as createMachine } from "../lib";',
+        );
     });
 
     it("imports only what is used: no args → createMachine only", () => {
         const code = emit(parse(mmd(...HEADER, '%% @action log: console.log("x")', "[*] --> a", "a --> b: X / log")));
-        expect(importLine(code)).toBe('import { createMachine } from "@fozy-labs/rx-toolkit";');
+        expect(importLine(code)).toBe(
+            'import { unstable_createMachine as createMachine } from "@fozy-labs/rx-toolkit";',
+        );
         expect(code).not.toContain("mutate");
     });
 
@@ -59,20 +65,26 @@ describe("emit: header and imports", () => {
         const code = emit(
             parse(mmd(...HEADER, "%% @action log: console.log(event.type)", "[*] --> a", "a --> b: X / log")),
         );
-        expect(importLine(code)).toBe('import { createMachine, type ActionArgs } from "@fozy-labs/rx-toolkit";');
+        expect(importLine(code)).toBe(
+            'import { unstable_createMachine as createMachine, type ActionArgs } from "@fozy-labs/rx-toolkit";',
+        );
     });
 
     it("imports GuardArgs only when a guard destructures, MachineEvent only for system triggers", () => {
         const narrowed = emit(
             parse(mmd(...HEADER, ...TYPED, "%% @guard g: context.n > 0", "[*] --> a", "a --> b: X [g]")),
         );
-        expect(importLine(narrowed)).toBe('import { createMachine, type GuardArgs } from "@fozy-labs/rx-toolkit";');
+        expect(importLine(narrowed)).toBe(
+            'import { unstable_createMachine as createMachine, type GuardArgs } from "@fozy-labs/rx-toolkit";',
+        );
         const always = emit(parse(mmd(...HEADER, ...TYPED, "%% @guard g: context.n > 0", "[*] --> a", "a --> b: [g]")));
         expect(importLine(always)).toBe(
-            'import { createMachine, type GuardArgs, type MachineEvent } from "@fozy-labs/rx-toolkit";',
+            'import { unstable_createMachine as createMachine, type GuardArgs, type MachineEvent } from "@fozy-labs/rx-toolkit";',
         );
         const constant = emit(parse(mmd(...HEADER, "%% @guard g: true", "[*] --> a", "a --> b: [g]")));
-        expect(importLine(constant)).toBe('import { createMachine } from "@fozy-labs/rx-toolkit";');
+        expect(importLine(constant)).toBe(
+            'import { unstable_createMachine as createMachine } from "@fozy-labs/rx-toolkit";',
+        );
     });
 
     it("orders the import names createMachine, mutate, type ActionArgs, type GuardArgs, type MachineEvent", () => {
@@ -91,7 +103,7 @@ describe("emit: header and imports", () => {
             ),
         );
         expect(importLine(code)).toBe(
-            'import { createMachine, mutate, type ActionArgs, type GuardArgs, type MachineEvent } from "@fozy-labs/rx-toolkit";',
+            'import { unstable_createMachine as createMachine, mutate, type ActionArgs, type GuardArgs, type MachineEvent } from "@fozy-labs/rx-toolkit";',
         );
     });
 });

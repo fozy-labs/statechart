@@ -5,7 +5,7 @@
  * the parser already rejects undeclared guard / action / delay names, and
  * the library checks the tables lazily when a machine starts.
  */
-import { createMachine } from "@fozy-labs/rx-toolkit";
+import { unstable_createMachine as createMachine } from "@fozy-labs/rx-toolkit";
 
 import { isCommentLine, splitLines } from "./parse/lines.js";
 import { StatechartParseError } from "./StatechartParseError.js";

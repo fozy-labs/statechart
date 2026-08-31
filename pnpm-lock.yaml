@@ -11,8 +11,8 @@ importers:
   packages/converter:
     dependencies:
       '@fozy-labs/rx-toolkit':
-        specifier: ^0.12.0-rc.1
-        version: 0.12.0-rc.1(react@19.2.8)(rxjs@7.8.2)(zod@4.4.3)
+        specifier: ^0.12.0
+        version: 0.12.0(react@19.2.8)(rxjs@7.8.2)(zod@4.4.3)
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -79,8 +79,8 @@ importers:
         specifier: ^0.1.3
         version: 0.1.3(eslint@9.39.5(jiti@2.7.0))(prettier@3.9.6)(typescript@5.9.3)(vitest@4.1.11(@types/node@25.9.5)(jsdom@28.1.0)(vite@7.3.6(@types/node@25.9.5)(jiti@2.7.0)))
       '@fozy-labs/rx-toolkit':
-        specifier: ^0.12.0-rc.1
-        version: 0.12.0-rc.1(react@19.2.8)(rxjs@7.8.2)(zod@4.4.3)
+        specifier: ^0.12.0
+        version: 0.12.0(react@19.2.8)(rxjs@7.8.2)(zod@4.4.3)
       '@ianvs/prettier-plugin-sort-imports':
         specifier: ^4.4.0
         version: 4.7.1(prettier@3.9.6)
@@ -524,8 +524,8 @@ packages:
       typescript: ^5.0.0
       vitest: ^4.0.0
 
-  '@fozy-labs/rx-toolkit@0.12.0-rc.1':
-    resolution: {integrity: sha512-mLOBBhc+y91y6rv5nMtYdLybC3yI5x0ZpElTTLtptjzHYJg7mHexJDexe0vcebN+S0biTZZvx9nHfRFg7YmQdw==}
+  '@fozy-labs/rx-toolkit@0.12.0':
+    resolution: {integrity: sha512-Wt+VdZXMf5M2/ttq2JVpHVJJEUsYBDt01fmIW7A/lgB4XnHxuKo/AZACL/MwkIE8SUDau9oMqmW3m6pF7fMFOw==}
     peerDependencies:
       react: ^19.0.0
       rxjs: ^7.0.0
@@ -2457,7 +2457,7 @@ snapshots:
       - prettier-plugin-ember-template-tag
       - supports-color
 
-  '@fozy-labs/rx-toolkit@0.12.0-rc.1(react@19.2.8)(rxjs@7.8.2)(zod@4.4.3)':
+  '@fozy-labs/rx-toolkit@0.12.0(react@19.2.8)(rxjs@7.8.2)(zod@4.4.3)':
     dependencies:
       immer: 10.2.0
       react: 19.2.8

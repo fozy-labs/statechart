@@ -1,6 +1,6 @@
 import {
-    createMachine,
-    MachineSignal,
+    unstable_createMachine as createMachine,
+    unstable_MachineSignal as MachineSignal,
     mutate,
     type AnyEventObject,
     type MachineClock,

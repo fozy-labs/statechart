@@ -49,7 +49,7 @@
     "convert": "pnpm run --silent build && node dist/cli.js"
   },
   "dependencies": {
-    "@fozy-labs/rx-toolkit": "^0.12.0-rc.1",
+    "@fozy-labs/rx-toolkit": "^0.12.0",
     "typescript": "5.9.3"
   },
   "devDependencies": {

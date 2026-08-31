@@ -7,7 +7,7 @@
  */
 import { readFileSync } from "node:fs";
 
-import { createMachine } from "@fozy-labs/rx-toolkit";
+import { unstable_createMachine as createMachine } from "@fozy-labs/rx-toolkit";
 import { describe, expect, it } from "vitest";
 
 import { convert } from "../src/convert.js";

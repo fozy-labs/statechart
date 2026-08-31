@@ -52,7 +52,7 @@ class Imports {
     machineEvent = false;
 
     render(importFrom: string): string {
-        const names = ["createMachine"];
+        const names = ["unstable_createMachine as createMachine"];
         if (this.mutate) names.push("mutate");
         if (this.actionArgs) names.push("type ActionArgs");
         if (this.guardArgs) names.push("type GuardArgs");

@@ -8,7 +8,7 @@ its own Mermaid diagram: active states are highlighted from the machine's `value
 event log and `context` sit beside them.
 
 ```tsx
-import { MachineSignal } from "@fozy-labs/rx-toolkit";
+import { unstable_MachineSignal as MachineSignal } from "@fozy-labs/rx-toolkit";
 import { StatechartViz } from "@fozy-labs/statechart-viz";
 import { definition } from "./square.generated";
 
@@ -23,12 +23,12 @@ definition carries a `source` or can render itself through `toMermaid()` will do
 ## Install
 
 ```sh
-npm install @fozy-labs/statechart-viz @fozy-labs/rx-toolkit@rc mermaid react react-dom rxjs
+npm install @fozy-labs/statechart-viz @fozy-labs/rx-toolkit mermaid react react-dom rxjs
 ```
 
 | Peer | Range | Needed for |
 | --- | --- | --- |
-| `@fozy-labs/rx-toolkit` | `>=0.12.0-rc.1` | `Signal`, `MachineSignal`, `createMachine`, `mutate`; the floor is set by `mutate` and `definition.source` |
+| `@fozy-labs/rx-toolkit` | `>=0.12.0` | `Signal`, `unstable_MachineSignal`, `unstable_createMachine`, `mutate`; the floor is set by `mutate` and `definition.source` |
 | `mermaid` | `^11.0.0` | rendering and indexing the diagram; loaded through `import()` on first use |
 | `react`, `react-dom` | `^19.0.0` | the component itself |
 | `rxjs` | `^7.0.0` | the `Observable` type on the machine interface — type-only, nothing imports it at runtime |
@@ -71,15 +71,15 @@ flowchart LR
     P["parse"]
     V["validateMachineConfig"]
     C["compileImplementations"]
-    M["createMachine"]
-    S["MachineSignal.state"]
+    M["unstable_createMachine"]
+    S["unstable_MachineSignal.state"]
 
     SRC --> P --> V --> C --> M --> S
 ```
 
 `parse` and `validateMachineConfig` come from the [converter](../converter/README.md), which is also where the input
-language is documented; `createMachine`, `mutate` and `MachineSignal` come from the library. `@context initial` is
-passed as a factory, so every restart re-evaluates the expression.
+language is documented; `unstable_createMachine`, `mutate` and `unstable_MachineSignal` come from the library.
+`@context initial` is passed as a factory, so every restart re-evaluates the expression.
 
 A Markdown document works in place of a bare `.mmd`: when the text contains a fenced block, the pipeline runs on the
 block declaring `%% @machine`, `machineId` picks which one (the first by default), and the diagram renders that same
@@ -90,7 +90,7 @@ Every stage failure lands in the notice area (`[data-scv-notice]`) naming the st
 | Stage | Failure | Notice |
 | --- | --- | --- |
 | parse | the converter's `StatechartParseError` | `Parsing failed, line N[:col]: message[ (at path)]` |
-| validate | the `createMachine` gate rejected the config | `Machine config error, line N: message[ (at path)]` |
+| validate | the `unstable_createMachine` gate rejected the config | `Machine config error, line N: message[ (at path)]` |
 | compile | a directive body is not valid JavaScript | `Compiling failed, line N: @kind name: message` |
 | create | the library refused to build the machine | `Machine creation failed: message` |
 | runtime | a directive body threw while the machine was running | `Runtime error: message`; the snapshot goes to `status: "error"` |
@@ -170,7 +170,7 @@ type StatechartVizRootProps = StatechartVizProps & {
 Type: `VizMachine`
 
 A running machine. `VizMachine` is a structural subset of the library's `MachineStateSignal`, so
-`MachineSignal.state(definition)` satisfies it without a cast — enforced by a type test in the package.
+`unstable_MachineSignal.state(definition)` satisfies it without a cast — enforced by a type test in the package.
 
 #### `source`
 

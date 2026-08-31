@@ -4,7 +4,7 @@
  * the installed `@fozy-labs/rx-toolkit` package (no alias, see
  * vitest.config.ts), so the trip exercises the same build a consumer gets.
  */
-import { createMachine } from "@fozy-labs/rx-toolkit";
+import { unstable_createMachine as createMachine } from "@fozy-labs/rx-toolkit";
 import { describe, expect, it } from "vitest";
 
 import { parse } from "../src/parse/parse.js";

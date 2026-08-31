@@ -51,7 +51,7 @@
     "svg-pan-zoom": "^3.6.2"
   },
   "peerDependencies": {
-    "@fozy-labs/rx-toolkit": ">=0.12.0-rc.1",
+    "@fozy-labs/rx-toolkit": ">=0.12.0",
     "mermaid": "^11.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -60,7 +60,7 @@
   "devDependencies": {
     "@eslint/js": "^9.20.0",
     "@fozy-labs/js-configs": "^0.1.3",
-    "@fozy-labs/rx-toolkit": "^0.12.0-rc.1",
+    "@fozy-labs/rx-toolkit": "^0.12.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
     "@playwright/test": "^1.62.1",
     "@testing-library/react": "^16.3.3",

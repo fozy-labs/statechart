@@ -1,5 +1,5 @@
 // AUTO-GENERATED from trafficLight.mmd — do not edit
-import { createMachine, mutate, type ActionArgs, type GuardArgs } from "@fozy-labs/rx-toolkit";
+import { unstable_createMachine as createMachine, mutate, type ActionArgs, type GuardArgs } from "@fozy-labs/rx-toolkit";
 
 export type Context = { power: boolean; retries: number };
 
