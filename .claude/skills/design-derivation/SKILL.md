@@ -14,10 +14,7 @@ description: >-
   decision is traceable to this brief rather than to a remembered look. Not for writing markup
   or component code against a settled spec, choosing frameworks or component libraries,
   copywriting, data-chart and visualisation specification, or accessibility conformance audits.
-astp-source: fozy-labs/astp
-astp-bundle: design
-astp-version: 1.0.0
-astp-hash: 9fde154b8175a06bb454ce8cb1e0f3032a235a2d5c98c21691235c53fd2a759c
+license: MIT
 ---
 
 # design-derivation
@@ -98,7 +95,7 @@ Standing filter, always active. On a fresh brief it produces no written output. 
 - **Post-hoc** → ask whether a model produced the form, or the description was fitted to the form afterwards.
 - **Currency** → the reading decides which defence is admissible for each element; a defence paid in the wrong currency is void even when it sounds right. On a foreign term used inside its own field, the correct verdict is usually "not applicable here", not "empty word".
 
-Verdict discipline: name the value and what *ought* to be; read what *is* off the form with the content ignored; state the verdict only as the divergence between them; attach content last, as a modifier of charge. Full protocol and the defence of a decision to a stakeholder: `references/argument.md`.
+Verdict discipline: name the value and what *ought* to be; read what *is* off the form with the content ignored; state the verdict only as the divergence between them; attach content last, as a modifier of charge. Full protocol and the defence of a decision to a stakeholder: `references/argument.md`. The checks that collect what a claim owes — and the budget for collecting — live in the `analysis` skill.
 
 ## 7. Gate 1: frame ⇄ value ⇄ scenario
 

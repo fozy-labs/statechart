@@ -1,9 +1,3 @@
----
-astp-source: fozy-labs/astp
-astp-bundle: fozy-labs
-astp-version: 1.4.0
-astp-hash: 0dc49bbadfa43fbc5685f0e9812523935955c092917c46606347bbd67755c992
----
 # Practical examples
 
 Concrete placement answers for recurring situations, using the fozy-labs stack (`simplest-di` +
@@ -202,7 +196,7 @@ entities/user/
 ```ts
 // entities/user/react/use-current-user.ts
 import { inject } from "@fozy-labs/simplest-di";
-import { useSignal } from "@fozy-labs/rx-toolkit";
+import { useSignal } from "@fozy-labs/rx-toolkit/react";
 import { SessionStore } from "@/shared/auth";
 
 export function useCurrentUser() {

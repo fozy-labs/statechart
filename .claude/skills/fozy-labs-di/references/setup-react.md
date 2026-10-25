@@ -1,9 +1,3 @@
----
-astp-source: fozy-labs/astp
-astp-bundle: fozy-labs
-astp-version: 1.4.0
-astp-hash: 5e3cd98ae2003f8dedb44503ed5b794be795f5e3807049392ce3ff60c36c1032
----
 # Setup — React binding
 
 Wiring `@fozy-labs/simplest-di` into a React app. Requires **React ≥ 19** (`React.use` is used to read the scope context).

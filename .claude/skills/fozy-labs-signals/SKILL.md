@@ -3,21 +3,18 @@ name: fozy-labs-signals
 description: >
   Reactive state primitives via @fozy-labs/rx-toolkit — Signal.state / compute / effect,
   LocalSignal, RxJS interop and the useSignal React hook.
-astp-source: fozy-labs/astp
-astp-bundle: fozy-labs
-astp-version: 1.4.0
-astp-hash: 7844314ec0a2f479f7fd29f4a0784eed27af3c4a11f26a9780c88ad0d039fe8d
+license: MIT
 ---
 
 # @fozy-labs/rx-toolkit — Signals
 
-Value-based reactive primitives (SolidJS / Angular Signals in spirit), built on RxJS. Reference version: **0.12.0**.
+Value-based reactive primitives (SolidJS / Angular Signals in spirit), built on RxJS. Reference version: **0.13.0**.
 Use for **local synchronous state** — server state goes through `createResource` (see `fozy-labs-rx-api`).
 
 Two layers:
 
 - **core** — framework-agnostic (`Signal`, the `State` / `Computed` / `Effect` / `FromSignal` classes, `Batcher`). Works in Node, workers, tests, any framework.
-- **react** — a single hook, `useSignal`. React ≥ 19 (declared peer), client-only.
+- **react** — a single hook, `useSignal`, from `@fozy-labs/rx-toolkit/react` (nothing React is at the package root since 0.13.0). React ≥ 19 (declared peer), client-only.
 
 Reactivity is by **value, not by event**: every write dedupes with `Object.is`, so writing an equal value notifies nobody.
 
@@ -73,7 +70,9 @@ class OrderListStore {
 ```
 
 - **Lazy.** With no subscriber it computes on demand and memoizes against the values of the dependencies it read — it holds no subscriptions. A live subscriber (a tracking parent, `obs`, `useSignal`) starts an internal effect that keeps it warm, and stops it when the last subscriber leaves.
-- **Deduped by `Object.is`.** A compute that builds a fresh object / array / `Set` on every run notifies on every run — that is a legitimate result, not a bug, but it is what makes React re-render. See [references/extra-recomputes.md](references/extra-recomputes.md).
+- **Deduped by `Object.is`, or by your `equals`.** `Signal.compute(fn, { equals })` compares the recomputed value with the previous one; on equal it keeps the previous reference — `obs` subscribers and dependents are not notified. Reads inside `equals` are not tracked; a throwing `equals` logs and falls back to `Object.is`. Without it, a compute that builds a fresh object / array / `Set` on every run notifies on every run — a legitimate result, not a bug, but it is what makes React re-render. See [references/extra-recomputes.md](references/extra-recomputes.md).
+- **Errors are state.** When `computeFn` throws with subscribers on, the error becomes the computed's value: reads rethrow it (without recomputing) until a dependency changes — then it recovers. Dependents restart and see the error on read; `obs` subscribers get `error` and the subscription ends.
+- **Cycles throw.** A computed reading itself, directly or through a chain, fails synchronously with `SignalCycleError` naming the chain (`A → B → A`).
 - Returns `DisposableSignal<T>` — no `set` / `update`.
 - ❌ Never `async` — a promise is not a value. Use `createResource` (`fozy-labs-rx-api`).
 
@@ -96,7 +95,8 @@ stop.unsubscribe(); // stop it; `stop.closed` is true afterwards
 
 - Runs **immediately and synchronously** at creation, then again on every tracked change.
 - **Only synchronous reads are tracked.** A signal read after `await`, inside `.then`, or in a timer callback establishes nothing — capture it before the async hop.
-- If the body throws, the effect unsubscribes itself and rethrows — it is dead and will never run again.
+- `effectFn` must return a teardown or **nothing** — an arrow body returning a value is a type error; write a block body.
+- **A throw on the first run** kills the effect and rethrows from `Signal.effect`. **A throw on a later run does not**: the effect stays subscribed to what it read before the throw, reruns when those change, and the error rethrows from the write that scheduled the run (usually `set()`). A teardown that throws is not called again. Unsubscribe explicitly an effect that must not survive a failure.
 - Nothing stops an effect for you. Create it where a teardown hook exists (React `useEffect`, DI `onScopeInit`), never in a constructor. See [references/disposal-and-leaks.md](references/disposal-and-leaks.md).
 
 ---
@@ -114,6 +114,7 @@ long that subscription outlives the last consumer.
 
 - Returns `DisposableSignal<T>` — `dispose()` freezes the last value and drops the upstream.
 - A read with nothing emitted returns `default`, or throws `Error: No value emitted` when no `default` was given.
+- Its `.obs` delivers **one value per batch**, at the end of it — a synchronous burst on connect (`of(1, 2, 3)`) delivers just `3`. `State.obs` still delivers every write.
 - Picking a `keepAlive`, error and complete behaviour: [references/rxjs-interop.md](references/rxjs-interop.md).
 
 ---
@@ -179,6 +180,7 @@ if (import.meta.env.DEV) {
 - ❌ Don't read signals inside `await` / microtask callbacks and expect tracking.
 - ❌ Don't create effects or subscriptions in a constructor — there is no teardown there.
 - ❌ Don't mutate in place and re-`set` the same reference — the write is dropped.
+- ❌ Don't `try/catch` a `set()` to intercept a compute/effect error — catch it at the read site or in an `ErrorBoundary`.
 - ✅ `$` suffix on every signal field.
 - ✅ Keep derived values as narrow as possible — one signal per thing a consumer reads.
 
@@ -198,6 +200,6 @@ Load these only when the specific situation applies — do **not** preload.
 | State that must survive a reload — `LocalSignal`, storage layout, GC, drivers           | [references/persisted-state.md](references/persisted-state.md)       |
 | One big object or a keyed collection wakes every reader (experimental APIs)             | [references/fine-grained-state.md](references/fine-grained-state.md) |
 | Modelling a lifecycle, not a value — state machines (`unstable_MachineSignal.state`)    | [references/statechart.md](references/statechart.md)                 |
-| Existing code uses a name this skill does not describe (`signalize`, `LocalState`)      | [references/migrations.md](references/migrations.md)                 |
+| Existing code uses a name this skill does not describe (`signalize`, `zodSchema`, `LocalState`) or imports `useSignal` from the package root | [references/migrations.md](references/migrations.md)                 |
 
 Pick **one** of `use-in-react.md` / `use-outside-react.md` — the one matching the host. Loading both variants of the same topic is redundant.
