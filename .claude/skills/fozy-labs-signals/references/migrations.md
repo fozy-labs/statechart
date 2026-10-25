@@ -1,15 +1,34 @@
----
-astp-source: fozy-labs/astp
-astp-bundle: fozy-labs
-astp-version: 1.4.0
-astp-hash: fc7f64aff961b39d70a8e0f8575e22bc3b19110a5d9d09ef434a77f1ca6cc141
----
 # Migrations — Signals
 
 The last two releases that require code changes. Read this only when working in a codebase written against an older
 version, or when an unfamiliar name shows up in existing code.
 
-**Contents:** [0.10.x → 0.11.0](#010x--0110--signalfrom-and-the-localsignal-rewrite) · [0.7.x → 0.8.0](#07x--080--dispose-and-localsignalstate) · [Name lookup](#name-lookup)
+**Contents:** [0.12.x → 0.13.0](#012x--0130--signalize-removed-zodschema--schema-effect-semantics) · [0.10.x → 0.11.0](#010x--0110--signalfrom-and-the-localsignal-rewrite) · [Name lookup](#name-lookup)
+
+---
+
+## 0.12.x → 0.13.0 — `signalize` removed, `zodSchema` → `schema`, effect semantics
+
+| Old (0.12.x) | Current |
+|--------------|---------|
+| `signalize(obs)` / `signalize(obs, def)` | **removed** — `Signal.from(obs)` / `Signal.from(obs, { default: def })` |
+| `LocalSignal.state({ zodSchema })` | `LocalSignal.state({ schema })` — any synchronous Standard Schema; `zod` is no longer a peer dependency |
+| `Signal.effect(() => values.push(x()))` | **type error** — the body must return a teardown or nothing; write a block body |
+| Engine internals — `DependencyTracker`, `SyncObservable`, `Batcher.scheduler`, `Effect._getRang()` | removed with no replacement; `SourceSignal.create(subscribe, defaultValue).peek()` covers the `SyncObservable` use |
+| `useSignal` / `useConstant` / `useEventHandler` / `useIsomorphicLayoutEffect` from `@fozy-labs/rx-toolkit` | `@fozy-labs/rx-toolkit/react` — removed from the root, no alias |
+
+Behavior that still compiles but changed:
+
+- A throwing `effectFn` used to unsubscribe the effect **for good**; now only a *first-run* throw does. A later throw
+  rethrows from the write that scheduled the run, and the effect fires again when a dependency it read before the throw
+  changes. Audit code that relied on a failing effect dying — unsubscribe it explicitly instead.
+- `.obs` of `Signal.from` / `SourceSignal` used to emit every upstream value; now it emits **one value per batch** — a
+  synchronous `of(1, 2, 3)` delivers `3`. `State.obs` still emits every write.
+- `SourceSignal.create`'s producer used to run **per subscriber**; now one producer is shared by all observers. A
+  producer written for per-subscriber side effects needs rethinking.
+- `try/catch` around `set()` that intercepted a compute/effect error no longer sees it at the write (except an effect's
+  re-run error, which rethrows from that write): a computed's error is caught at the **read**, a component's — in an
+  `ErrorBoundary`.
 
 ---
 
@@ -17,8 +36,7 @@ version, or when an unfamiliar name shows up in existing code.
 
 ### `signalize` → `Signal.from`
 
-`signalize` still works and is still a `ReadonlySignal` (no `dispose()`), but it is `@deprecated`. The equivalence is
-exact:
+`signalize` was deprecated here and **removed in 0.13.0**. The equivalence is exact:
 
 ```ts
 signalize(obs)        // ≡ Signal.from(obs, { keepAlive: "none" })
@@ -58,47 +76,16 @@ instead. Details in [persisted-state.md](persisted-state.md).
 
 ---
 
-## 0.7.x → 0.8.0 — `dispose()` and `LocalSignal.state`
-
-### `Computed.destroy()` → `dispose()`
-
-```ts
-sum$.destroy();   // old
-sum$.dispose();   // current
-```
-
-### `LocalState.create(options)` → `LocalSignal.state(options)`
-
-```ts
-const volume$ = LocalState.create({ key: "user-volume", defaultValue: 1 });    // old
-const volume$ = LocalSignal.state({ key: "user-volume", defaultValue: 1 });    // current
-```
-
-### The legacy signal types were deleted
-
-| Removed type              | Replacement                                                     |
-|---------------------------|-----------------------------------------------------------------|
-| `ReadableSignalLike<T>`   | `ReadonlySignal<T>`                                             |
-| `ReadableSignalFnLike<T>` | `ReadonlySignal<T>`                                             |
-| `WriteableSignalLike<T>`  | `StateSignal<T>` (or `LocalStateSignal<T>`)                     |
-| `ClearableSignalLike<T>`  | `LocalStateSignal<T>` — it is the one carrying `clear()`        |
-| `StatefulSignalFn<T>`     | `LocalStateSignal<T>`                                           |
-| `SignalFn<T>`             | `StateSignal<T>`                                                |
-| `ComputeFn<T>`            | `DisposableSignal<T>`                                           |
-
-The current hierarchy is `ReadonlySignal` / `DisposableSignal` / `StateSignal` / `LocalStateSignal`.
-
----
-
 ## Name lookup
 
 | Name in old code                | Read it as                                                            |
 |---------------------------------|-----------------------------------------------------------------------|
-| `signalize(obs, def?)`          | `Signal.from(obs, { default: def })` — drop `keepAlive: "none"`        |
+| `signalize(obs, def?)`          | removed — `Signal.from(obs, { default: def })`, and pick a `keepAlive` deliberately |
+| `zodSchema`                     | `schema` — any synchronous Standard Schema                            |
 | `LocalState.create(...)`        | `LocalSignal.state(...)`                                              |
 | `computed.destroy()`            | `computed.dispose()`                                                  |
 | `ReadonlySignal.create(...)`    | `SourceSignal.create(...)` — the class was renamed in 0.7.4; `ReadonlySignal` is now the read-only **type** |
-| `SignalFn` / `ComputeFn` / …    | see the table above                                                   |
+| `SignalFn` / `ComputeFn` / …    | the current hierarchy: `ReadonlySignal` / `DisposableSignal` / `StateSignal` / `LocalStateSignal` |
 
 ---
 
@@ -106,6 +93,7 @@ The current hierarchy is `ReadonlySignal` / `DisposableSignal` / `StateSignal` /
 
 - ❌ Replacing `signalize(obs)` with `Signal.from(obs, { keepAlive: "none" })` — that keeps both bugs you were migrating away from.
 - ❌ Shipping the 0.11 upgrade without checking what lives in `LocalSignal` — every stored value is dropped once.
+- ❌ Renaming `zodSchema` → `schema` and adding `.refine(async …)` in the same pass — async schemas are rejected (`console.error`, the stored value ignored).
 - ❌ Keeping a workaround for the old cross-tab clobbering or corrupt-sibling behaviour; both are fixed.
 - ✅ Take the 0.11 upgrade as the moment to move anything non-regenerable out of `LocalSignal`.
 - ✅ After swapping `signalize` for `Signal.from`, pick a `keepAlive` deliberately — the default suits replaying sources, `"forever"` suits stateful pipelines.

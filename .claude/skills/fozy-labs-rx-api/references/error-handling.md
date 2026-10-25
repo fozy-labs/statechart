@@ -1,9 +1,3 @@
----
-astp-source: fozy-labs/astp
-astp-bundle: fozy-labs
-astp-version: 1.4.0
-astp-hash: ad08976e582eb8c90c1864f7b49775b14744545daec019cc21f806fe14070160
----
 # Errors, retries and cancellation
 
 Typing `error`, where a failure surfaces, what the library retries (almost nothing) and what it aborts.
@@ -17,6 +11,8 @@ Typing `error`, where a failure surfaces, what the library retries (almost nothi
 Every state's `error` is `unknown` until the api declares `mapError`. That option normalizes every raw failure once and its return type becomes the api's `TError`, propagated to every resource and command it creates:
 
 ```ts
+import { reactHooksPlugin } from "@fozy-labs/rx-toolkit/react";
+
 class NetUnknownError extends Error {
   constructor(readonly original: unknown) { super("net unknown"); }
 }
@@ -42,9 +38,13 @@ export const api = createApi({
 
 Guarantees:
 
-- Called **exactly once per failure**, at `machine.fail()`, so agent state, the Suspense throw, `ensure` / `fetch` rejections and the mutation envelope all see the same instance.
-- A throwing `mapError` is logged to `console.error` and the raw error goes into the state — the machine does not break.
+- Called **exactly once per failure**, when the entry records it, so clutch state, the Suspense throw, `ensure` / `fetch` rejections and the mutation envelope all see the same instance.
+- A throwing `mapError` is logged to `console.error` and the raw error goes into the state — the entry does not break.
 - Without `mapError`, behaviour is unchanged and `TError` stays `unknown`.
+
+For reporting rather than mapping use `DefaultOptions.onQueryError`: it fires on **every** query failure (resources
+and commands, retries included), after the entry records the error, with the `mapError` output. (0.12.x declared it
+but never called it.)
 
 ---
 
@@ -54,7 +54,7 @@ Guarantees:
 
 | Channel                                                | Why                                                       |
 |--------------------------------------------------------|-----------------------------------------------------------|
-| Aborted runs                                           | Flow control, not a failure — never reaches the machine.  |
+| Aborted runs                                           | Flow control, not a failure — never reaches the entry state. |
 | `$queryFulfilled` in `onQueryStarted`                  | Deliberately observes the unhandled outcome.              |
 | `ensure` / `fetch` rejecting with `CacheEntryRemovedError` | These channels are not typed as `TError`.              |
 
@@ -78,26 +78,26 @@ On the command path it passes through `mapError` (so the typed envelope holds), 
 
 | Path                                | Surface                                                          |
 |-------------------------------------|------------------------------------------------------------------|
-| `useResource`                       | `status: "error"` / `"refresh-error"`, `isError`, `error`         |
-| `useSuspenseResource`               | Initial error thrown to the nearest Error Boundary; a refresh error stays as `isRefreshError` with stale data |
+| `useResource`                       | `status: "error"` with `error`; `dataSource` says whether data is still on screen (`hasError && hasData`) |
+| `useSuspenseResource`               | An error with nothing to show is thrown to the nearest Error Boundary; an error behind previous / placeholder data comes back in state (`hasError`) |
 | `resource.ensure/fetch`             | Promise rejection                                                 |
-| `resource.prefetch` / `refresh`     | Nothing — swallowed; read `getState(args)` instead                |
-| `useCommand` / `agent.trigger`      | `{ status: "error", error }` envelope **and** `state.isError`      |
+| `resource.prefetch` / `invalidate`  | Nothing — swallowed / recorded in the entry; read `getState(args)` instead |
+| `useCommand` / `clutch.trigger`     | `{ status: "error", error }` envelope **and** `state.hasError`    |
 | `command.execute`                   | Promise rejection                                                  |
 
-`error` and `refresh-error` are different: the first has no data, the second keeps the last good response in `data`. Rendering an error screen on `refresh-error` throws away data the user could still use.
+`status: "error"` with `dataSource: "current"` and plain `error` are different: the first keeps the last good response in `data`. Rendering an error screen there throws away data the user could still use. How loud each failure should be — [ui-states.md](ui-states.md#error-loudness).
 
 ---
 
 ## Retrying
 
-There is **no automatic retry or backoff.** Retries are explicit:
+There is **no retry or backoff on failure.** The only automatic re-run is [`invalidateOn`](cache-and-invalidation.md#automatic-revalidation--invalidateon) — focus, reconnect, interval — which retries a held failed entry when its trigger fires. Everything else is explicit:
 
 | Call                              | Semantics                                                                 |
 |-----------------------------------|---------------------------------------------------------------------------|
-| `state.retry()` (resource)        | Re-runs the failed query. No-op outside `error`.                          |
+| `state.retry()` (resource)        | Re-runs the failed query, **keeping the error on screen**: `pending` with `hasError` until the run settles. No-op with a console warn outside an error. |
+| `state.invalidate()` (resource)   | Re-checks the shown data and **clears the error**. With nothing on screen (`status: "error"`, `dataSource: "none"`) it warns and no-ops — that row wants `retry()`. Entry-level `entry.invalidate()` / `resource.invalidate(args)` and the `useResources` aggregate `invalidate()` retry a failed entry instead. |
 | `state.retry()` (command)         | Re-runs the same entry, reusing its request id. No-op outside `error`.    |
-| `state.refresh()`                 | Background SWR refresh; keeps stale data on screen. No-op outside `success` / `refresh-error`. |
 | `ensure` / `fetch` / `prefetch`   | Retry an entry sitting in `error` before awaiting it — in both `prefetch` modes. |
 | `command.execute(args)` again     | A **new** entry and a **new** request id — a different logical operation. |
 
@@ -107,10 +107,10 @@ Automatic retry policy belongs inside `queryFn`, where you also control backoff 
 
 ## Cancellation
 
-- A resource's `queryFn` receives an `AbortSignal`; forward it to `fetch`. The library aborts on args change, on the last unsubscribe, and when retention collects the entry.
+- A resource's `queryFn` receives an `AbortSignal`; forward it to `fetch`. The library aborts on args change, on the last unsubscribe, when retention collects the entry, and on `invalidate()` in the default `cancel` in-flight mode.
 - A command's `queryFn` gets **no** signal — mutations are not cancelled.
 - The `signal` passed to `ensure` / `fetch` detaches the **caller**, it does not abort a shared in-flight query. See [reading-outside-react.md](reading-outside-react.md).
-- A synchronous `throw` from a non-async `queryFn` is handled like any other rejection: the entry is created and moves to `error` / `refresh-error`.
+- A synchronous `throw` from a non-async `queryFn` is handled like any other rejection: the entry is created and moves to `error` / `invalidate-error`.
 
 ---
 
@@ -119,7 +119,7 @@ Automatic retry policy belongs inside `queryFn`, where you also control backoff 
 - ❌ Typing `error` as your own error class without `mapError` — it is `unknown`.
 - ❌ A `mapError` with no fallback branch — `CacheEntryRemovedError` and anything unexpected will violate the declared `TError`.
 - ❌ Expecting a `catch` around `ensure` to always receive `TError` — that channel also yields raw removal and abort reasons.
-- ❌ Waiting for a built-in retry/backoff to kick in.
-- ✅ Handle `refresh-error` by showing stale data plus an inline retry, not a full error state.
+- ❌ Waiting for a built-in retry/backoff to kick in — `invalidateOn` re-runs on focus / reconnect / interval, not on failure.
+- ✅ Handle an invalidation failure by showing stale data plus an inline retry, not a full error state.
 - ✅ Put transport-level retry, auth refresh and status-code mapping in `queryFn` or in a shared fetcher wrapper.
 - ✅ Keep `mapError` total and side-effect free; use `onQueryError` for reporting.

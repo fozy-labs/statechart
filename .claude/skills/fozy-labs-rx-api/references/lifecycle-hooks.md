@@ -1,9 +1,3 @@
----
-astp-source: fozy-labs/astp
-astp-bundle: fozy-labs
-astp-version: 1.4.0
-astp-hash: ada5baf6675d1a0ff4f172bb86bba3b06fd873f8fdfacb25ec3cc3a07ef192b2
----
 # Lifecycle hooks — `onCacheEntryAdded` / `onQueryStarted`
 
 The two callbacks that let code run alongside a cache entry: attaching a live subscription for as long as an entry
@@ -11,14 +5,14 @@ exists, and instrumenting every individual query run.
 
 Both are accepted at two levels — on `createApi(...)` (api-wide) and on `createResource` / `createCommand` (local).
 
-**Contents:** [`onCacheEntryAdded`](#oncacheentryadded--once-per-cache-entry) · [`onQueryStarted`](#onquerystarted--once-per-query-run) · [`composeHooks`](#composehooks--several-hooks-on-one-option) · [Both levels run](#both-levels-run) · [Polling and retry](#not-a-substitute-for-polling-or-retry)
+**Contents:** [`onCacheEntryAdded`](#oncacheentryadded--once-per-cache-entry) · [`onQueryStarted`](#onquerystarted--once-per-query-run) · [Hook arrays](#hook-arrays--several-hooks-on-one-option) · [Both levels run](#both-levels-run) · [Polling and retry](#polling-and-retry)
 
 ---
 
 ## `onCacheEntryAdded` — once per cache entry
 
 Fires when an entry is created for a given set of args. Use it for anything whose lifetime should match the entry's:
-a polling timer, a socket that patches *around* the entry's own data. For plain live data a stream `queryFn`
+a custom polling schedule, a socket that patches *around* the entry's own data. For plain live data a stream `queryFn`
 (an `Observable` — see [stream-queries.md](stream-queries.md)) replaces this plumbing entirely.
 
 On a **command** it fires once per run, not once per key: every `execute` completes the previous entry for that key and
@@ -77,25 +71,24 @@ await is therefore harmless, but a resource you opened in the hook leaks unless 
 
 ---
 
-## `composeHooks` — several hooks on one option
+## Hook arrays — several hooks on one option
 
-`composeHooks(...hooks)` merges hooks of one kind into one, for stacking independent behaviours (logging, optimistic
+Both options accept a single hook or an **array of hooks**, for stacking independent behaviours (logging, optimistic
 updates, metrics) on a single option:
 
 ```ts
-import { composeHooks } from "@fozy-labs/rx-toolkit";
-
 getUser = api.createResource({
   queryFn: (id: number): Promise<User> => fetchUser(id),
-  onQueryStarted: composeHooks(logQueryStarted, warmRelatedCaches),
+  onQueryStarted: [logQueryStarted, isDev && collectMetrics],
 });
 ```
 
-- `undefined` arguments are skipped; a single remaining hook is returned as-is, none — `undefined`.
+- Falsy elements (`undefined`, `false`) are skipped, so a conditional hook is written inline in the array.
 - All hooks **start simultaneously** (completion order not guaranteed) and each one's error is suppressed
-  independently. The api merges api-level and local hooks with this same utility.
+  independently. The api merges api-level and local hooks under these same rules.
 - Type-inference limit: with inline un-annotated hooks TS needs `TData` known up front — annotate the `queryFn`
   return type, the hook's `ctx`, or pass the generics explicitly.
+- `composeHooks(...)` from older code does the same thing; it is `@deprecated` and removed in 0.14.0 — pass an array.
 
 ---
 
@@ -117,15 +110,18 @@ export const api = createApi({
 
 ---
 
-## Not a substitute for polling or retry
+## Polling and retry
 
-The package ships neither. `onCacheEntryAdded` is where you build them: start an interval that calls `refresh(args)`
-and clear it after `$cacheEntryRemoved`. Retry policy belongs inside `queryFn` — see [error-handling.md](error-handling.md).
+Polling is built in since 0.13.1: `invalidateOn: { interval }` (with `focus` / `reconnect`) runs a per-entry timer that
+pauses while the entry is unheld, the page hidden or the device offline — see
+[cache-and-invalidation.md](cache-and-invalidation.md#automatic-revalidation--invalidateon). Build a timer in
+`onCacheEntryAdded` only for a schedule `invalidateOn` cannot express, and clear it after `$cacheEntryRemoved`. Retry
+on failure is not built in; its policy belongs inside `queryFn` — see [error-handling.md](error-handling.md).
 
-Use `refresh(args)` here, not `prefetch(args, { force: true })`: `prefetch` re-arms the entry's `retentionTime` on
-every call, so a poll faster than the retention window keeps the entry alive forever and `$cacheEntryRemoved` never
-resolves. The trade-off is that `refresh` no-ops (with a console warning) while the entry sits in `pending`,
-`refreshing` or `error` — a tick that lands there is simply skipped.
+In a hand-built poll use `invalidate(args)`, not `prefetch(args, { force: true })`: `prefetch` re-arms the entry's
+`retentionTime` on every call, so a poll faster than the retention window keeps the entry alive forever and
+`$cacheEntryRemoved` never resolves. `invalidate` only refetches a **held** entry — while nothing holds it, nothing
+needs fresh data. A tick that must force the request regardless goes through `prefetch(args, { force: true })`.
 
 ---
 

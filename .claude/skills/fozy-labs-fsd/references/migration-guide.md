@@ -1,9 +1,3 @@
----
-astp-source: fozy-labs/astp
-astp-bundle: fozy-labs
-astp-version: 1.4.0
-astp-hash: 135844bd740552cfad7a65cf4e1d166b098a86ef551877251c2b6419cf67cac4
----
 # Migration guide
 
 Moving an existing codebase to FSD v2.1 — either from FSD v2.0, or from no FSD at all. Target folder trees

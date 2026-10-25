@@ -1,9 +1,3 @@
----
-astp-source: fozy-labs/astp
-astp-bundle: fozy-labs
-astp-version: 1.4.0
-astp-hash: 175e1eecb2eaad94e5da2ce31bfb583cb691c20311fe86e5cf54ac3446b8b5d7
----
 # Statecharts
 
 State machines in the **XState v5 config format** (a strict subset, `xstate` is not a dependency), executed by an
@@ -132,7 +126,7 @@ Execution order in a macrostep: `exit` of the source states → transition actio
 
 | Option | Default | Meaning |
 |---|---|---|
-| `key` | `"Statechart/<machine id>"` | Redux DevTools key (concurrent unkeyed instances get `#2`, `#3`, …) |
+| `key` | `"Statechart/<machine id>"` | Redux DevTools key (concurrent unkeyed instances share one entry — pass `key` to tell them apart) |
 | `isDisabled` | — | opt this instance out of Redux DevTools |
 | `inspector` | global `MACHINE_DEVTOOLS` | external machine inspector; `null` disables |
 | `autoStart` | `true` | `start()` in the constructor; `false` still computes the initial snapshot, effects wait for `start()` |
@@ -187,7 +181,8 @@ effect watching `status: "error"`.
 
 - ⚠️ `matches()` / `can()` read the snapshot **without** registering a dependency. Inside a `Signal.compute`, read the
   signal explicitly (`light$()`) or derive from its value — otherwise the compute never recomputes.
-- There is no dedicated React hook; `useSignal(light$)` works because `MachineStateSignal` implements `obs` / `peek`.
+- There is no dedicated React hook; `useSignal(light$)` (from `@fozy-labs/rx-toolkit/react`) works because
+  `MachineStateSignal` is a `ReadonlySignal` — a callable with `peek()`.
 - A component-lifetime instance: `useState(() => MachineSignal.state(def))`. The callable signal is a function, so it
   must go through `useState` / `setState` **only as a thunk** — `setMachine$(MachineSignal.state(def))` would be
   treated as an updater and store a snapshot instead of the signal (symptom: `signal$.peek is not a function`).
